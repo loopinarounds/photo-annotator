@@ -24,7 +24,6 @@ module.exports = {
       ],
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-floating-promises": "off",
-      // This is a tech test, we can live dangerously
     },
   };
   
