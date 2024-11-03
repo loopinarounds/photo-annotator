@@ -8,12 +8,18 @@ datasource db {
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  name  String
-  email String @unique
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String @unique
+  password String
+
+  rooms Room[]
 }
 
-model Image {
-  id      Int    @id @default(autoincrement())
-  content String
+model Room {
+  id               Int    @id @default(autoincrement())
+  liveblocksRoomId String
+  image            String
+  annotations      Json[]
+  users            User[]
 }
