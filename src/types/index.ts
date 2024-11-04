@@ -33,6 +33,6 @@ export type Room = {
   id: number;
   name: string;
   ownerUserId: number;
-  file: string;
+  image: string;
   participants: User[];
 };

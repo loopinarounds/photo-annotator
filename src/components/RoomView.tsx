@@ -1,13 +1,13 @@
 import { Room } from "../types";
 
-function RoomPreview({ file, name, participants }: Room) {
+function RoomView({ image, name, participants }: Room) {
   const emails: string[] = participants.map((participant) => participant.email);
 
   return (
     <div className="flex items-center p-4 border rounded-lg shadow-md bg-white">
       <div className="flex-shrink-0">
         <img
-          src={file}
+          src={image}
           alt={name}
           className="w-16 h-16 rounded-full object-cover"
         />
@@ -27,4 +27,4 @@ function RoomPreview({ file, name, participants }: Room) {
   );
 }
 
-export default RoomPreview;
+export default RoomView;

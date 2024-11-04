@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { privateApiRequest } from "../api";
 import { RoomResponse, type Room } from "../types";
 import Loading from "../components/Loading";
+import RoomView from "../components/RoomView";
 
 export function Room() {
   const { roomId } = useParams();
@@ -27,8 +28,14 @@ export function Room() {
   }
 
   return (
-    <div>
-      <h1>Room {room.id}</h1>
-    </div>
+    <>
+      <RoomView
+        id={room.id}
+        image={room.image}
+        name={room.name}
+        ownerUserId={room.ownerUserId}
+        participants={room.participants}
+      />
+    </>
   );
 }
