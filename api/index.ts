@@ -1,14 +1,12 @@
 import Koa from "koa";
 import Router from "koa-router";
 import bodyParser from "koa-bodyparser";
-
 import { PrismaClient } from "@prisma/client";
-import jwt from "jsonwebtoken";
-import koajwt from "koa-jwt";
 import bcrypt from "bcrypt";
 import cors from "@koa/cors";
 import multer from "koa-multer";
-import { uploadToSupbaseS3 } from "./s3";
+import session from "koa-session";
+// import { uploadToSupbaseS3 } from "./s3";
 
 const app = new Koa();
 const router = new Router();
@@ -16,17 +14,54 @@ const prisma = new PrismaClient();
 
 const SECRET_KEY = "your_secret_key"; // Will Use a secure key in production
 
-app.use(cors());
+// Session configuration
+app.keys = [SECRET_KEY];
+const SESSION_CONFIG = {
+  key: "koa.sess",
+  maxAge: 86400000, // 1 day
+  autoCommit: true,
+  overwrite: true,
+  httpOnly: true,
+  signed: true,
+  rolling: true,
+  renew: false,
+} as const;
+
+// Apply session middleware
+app.use(session(SESSION_CONFIG, app));
+
+// Configure CORS with credentials
+app.use(
+  cors({
+    credentials: true,
+    origin: "http://localhost:5173", // Your frontend URL
+  })
+);
+
 app.use(multer().any());
 
 const upload = multer({
-  storage: multer.memoryStorage(), // Store file in memory
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024,
   },
 });
 
-app.use(koajwt({ secret: SECRET_KEY }).unless({ path: [/^\/public/] }));
+// Auth middleware
+app.use(async (ctx, next) => {
+  if (ctx.path.startsWith("/public")) {
+    return await next();
+  }
+
+  if (!ctx.session?.userId) {
+    ctx.status = 401;
+    ctx.body = { error: "Unauthorized" };
+    return;
+  }
+
+  ctx.state.user = { id: ctx.session.userId };
+  await next();
+});
 
 app.use(async (ctx, next) => {
   if (ctx.path === "/api/create-room") {
@@ -40,11 +75,6 @@ app.use(async (ctx, next) => {
   })(ctx, next);
 });
 
-app.use(async (ctx, next) => {
-  ctx.state.user = null;
-  await next();
-});
-
 router.post("/public/signup", async (ctx) => {
   const { email, password } = ctx.request.body as {
     email: string;
@@ -52,9 +82,7 @@ router.post("/public/signup", async (ctx) => {
   };
 
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (user) {
@@ -72,13 +100,15 @@ router.post("/public/signup", async (ctx) => {
     },
   });
 
+  if (ctx.session) {
+    ctx.session.userId = newUser.id;
+  }
+
   ctx.status = 200;
-
-  const token = jwt.sign({ id: newUser.id }, SECRET_KEY, {
-    expiresIn: "1h",
-  });
-
-  ctx.body = { token, userId: newUser.id, userEmail: newUser.email };
+  ctx.body = {
+    userId: newUser.id,
+    userEmail: newUser.email,
+  };
 });
 
 router.post("/public/login", async (ctx) => {
@@ -86,52 +116,79 @@ router.post("/public/login", async (ctx) => {
     email: string;
     password: string;
   };
+
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
-  if (!user) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     ctx.status = 401;
     ctx.body = { error: "Invalid email or password" };
     return;
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    ctx.status = 401;
-    ctx.body = { error: "Invalid email or password" };
-    return;
+  if (ctx.session) {
+    ctx.session.userId = user.id;
   }
 
-  const token = jwt.sign({ id: user.id }, SECRET_KEY, {
-    expiresIn: "1h",
-  });
-
-  ctx.body = { token, userId: user.id, userEmail: user.email };
+  ctx.body = {
+    userId: user.id,
+    userEmail: user.email,
+  };
 });
 
-router.get("/api/:userId/rooms", async (ctx) => {
-  const userId = ctx.params.userId;
+router.get("/api/check-auth", async (ctx) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: ctx.session?.userId,
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      ctx.session = null;
+      ctx.status = 401;
+      ctx.body = {
+        authenticated: false,
+        error: "User not found",
+      };
+      return;
+    }
+
+    ctx.status = 200;
+    ctx.body = {
+      authenticated: true,
+      user: { id: user.id, email: user.email },
+    };
+  } catch (error) {
+    ctx.session = null;
+    ctx.status = 401;
+    ctx.body = {
+      authenticated: false,
+      error: "Authentication check failed",
+    };
+  }
+});
+
+router.post("/api/logout", async (ctx) => {
+  ctx.session = null;
+  ctx.status = 200;
+  ctx.body = { message: "Logged out successfully" };
+});
+
+router.get("/api/rooms", async (ctx) => {
+  const userId = ctx.session?.userId;
 
   const user = await prisma.user.findUnique({
     where: {
-      id: parseInt(userId),
+      id: userId,
     },
     select: {
-      rooms: {
-        select: {
-          id: true,
-          name: true,
-          participants: {
-            select: {
-              id: true,
-              email: true,
-            },
-          },
-        },
-      },
+      rooms: true,
     },
   });
 
@@ -144,7 +201,9 @@ router.get("/api/:userId/rooms", async (ctx) => {
   ctx.status = 200;
   const rooms = user.rooms;
 
-  ctx.body = rooms;
+  ctx.body = { rooms };
+
+  return;
 });
 
 router.get("/api/room/:roomId", async (ctx) => {
@@ -158,6 +217,7 @@ router.get("/api/room/:roomId", async (ctx) => {
       participants: {
         select: {
           id: true,
+          email: true,
         },
       },
     },
@@ -169,19 +229,19 @@ router.get("/api/room/:roomId", async (ctx) => {
     return;
   }
 
-  if (
-    ctx.state.user.id !== room.ownerUserId ||
-    !room.participants.find((user) => user.id === ctx.state.user.id)
-  ) {
+  const isAllowedAccess =
+    ctx.state.user.id === room.ownerUserId ||
+    room.participants.some((user) => user.id === ctx.state.user.id);
+
+  if (!isAllowedAccess) {
     ctx.status = 403;
     ctx.body = { error: "You are not allowed to access this room" };
     return;
   }
 
-  ctx.status = 200;
   ctx.body = room;
+  ctx.status = 200;
 });
-
 router.post("/api/:roomId/invite-to-room", async (ctx) => {
   const { email } = ctx.request.body as { email: string };
   const roomId = ctx.params.roomId;
@@ -201,6 +261,15 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
     },
   });
 
+  await prisma.user.update({
+    where: {
+      id: ctx.session?.userId,
+    },
+    data: {
+      rooms: { connect: { id: roomIdInt } },
+    },
+  });
+
   if (!room) {
     ctx.status = 404;
     ctx.body = { error: "Room not found" };
@@ -211,27 +280,21 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
   ctx.body = room;
 });
 
-router.post(
-  "/api/create-room",
-  upload.single("file"), // 'file' should match the field name in your FormData
-  async (ctx) => {
-    try {
-      const file = (ctx.req as any).files[0]; // Access the uploaded file
+router.post("/api/create-room", upload.single("file"), async (ctx) => {
+  try {
+    // const file = (ctx.req as any).files[0]; // Access the uploaded file
 
-      const { buffer, originalname, mimetype } = file;
+    // const upload = await uploadToSupbaseS3(buffer, originalname, mimetype);
 
-      const upload = await uploadToSupbaseS3(buffer, originalname, mimetype);
+    //TODO: make sure we create prisma rooms for user
 
-      console.log(upload);
-
-      ctx.body = 200;
-    } catch (error) {
-      console.error("Error handling file upload:", error);
-      ctx.status = 500;
-      ctx.body = { error: "Failed to process file upload" };
-    }
+    ctx.body = 200;
+  } catch (error) {
+    console.error("Error handling file upload:", error);
+    ctx.status = 500;
+    ctx.body = { error: "Failed to process file upload" };
   }
-);
+});
 
 app.use(router.routes()).use(router.allowedMethods());
 

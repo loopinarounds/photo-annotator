@@ -1,26 +1,32 @@
-import React from "react";
+import React, { memo } from "react";
 import { Navigate } from "react-router-dom";
 import Sidebar from "./SideBar";
+import Loading from "./Loading";
+import { useAuth } from "../hooks/useAuth";
 
 interface ProtectedRouteProps {
   element: React.ReactNode;
-  isAuthenticated: boolean;
 }
 
-export function ProtectedRoute({
+export const ProtectedRoute = memo(function ProtectedRoute({
   element,
-  isAuthenticated,
 }: ProtectedRouteProps) {
-  return isAuthenticated ? (
-    <>
-      <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex-grow">{element}</div>
-      </div>
-    </>
-  ) : (
-    <Navigate to="/login" replace />
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isAuthenticated === false) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <div className="flex h-screen">
+      <Sidebar />
+      <div className="flex-grow">{element}</div>
+    </div>
   );
-}
+});
 
 export default ProtectedRoute;

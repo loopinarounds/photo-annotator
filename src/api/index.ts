@@ -1,6 +1,4 @@
-import { isLoggedIn } from "../auth";
-
-const API_BASE_URL = "http://localhost:3000"; // Can be changed to the deployed API URL
+const API_BASE_URL = "http://localhost:3000";
 
 export async function publicApiRequest<T>(
   endpoint: string,
@@ -10,7 +8,6 @@ export async function publicApiRequest<T>(
   }: {
     method?: string;
     body?: Record<string, unknown> | null;
-    token?: string | null;
   } = {}
 ): Promise<T> {
   const headers: Record<string, string> = {
@@ -21,6 +18,7 @@ export async function publicApiRequest<T>(
     method,
     headers,
     body: body ? JSON.stringify(body) : null,
+    credentials: "include",
   });
 
   return await response.json();
@@ -31,26 +29,12 @@ export async function privateApiRequest<T>(
   {
     method = "GET",
     body = null,
-    token = localStorage.getItem("token"),
   }: {
     method?: string;
     body?: Record<string, unknown> | null | FormData;
-    token?: string | null;
   } = {}
 ): Promise<T> {
-  if (!token) {
-    throw new Error("No token found");
-  }
-
-  const isValid = isLoggedIn();
-
-  if (!isValid) {
-    throw new Error("Token is invalid");
-  }
-
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${token}`,
-  };
+  const headers: Record<string, string> = {};
 
   const requestBody = !body
     ? null
@@ -58,7 +42,6 @@ export async function privateApiRequest<T>(
     ? body
     : JSON.stringify(body);
 
-  // Only add Content-Type if it's NOT FormData
   if (!(body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
@@ -67,6 +50,7 @@ export async function privateApiRequest<T>(
     method,
     headers,
     body: requestBody,
+    credentials: "include", // Add this
   });
 
   return await response.json();

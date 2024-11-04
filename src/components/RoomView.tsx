@@ -1,7 +1,10 @@
 import { Room } from "../types";
 
 function RoomView({ image, name, participants }: Room) {
-  const emails: string[] = participants.map((participant) => participant.email);
+  const emails: string[] =
+    participants.length > 0
+      ? participants.map((participant) => participant.email)
+      : [];
 
   return (
     <div className="flex items-center p-4 border rounded-lg shadow-md bg-white">

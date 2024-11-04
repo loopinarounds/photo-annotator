@@ -21,9 +21,9 @@ function Login() {
       return;
     }
 
-    const { token, userId, userEmail } = response;
+    const { userId, userEmail } = response;
 
-    setLocalData({ token, userId, userEmail });
+    setLocalData({ userId, userEmail });
 
     navigate("/");
   };

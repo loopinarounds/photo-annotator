@@ -13,8 +13,12 @@ export type LoginResponse = {
   error?: string;
 };
 
-export type RoomResponse = {
-  room: Room;
+export type Room = {
+  id: number;
+  name: string;
+  ownerUserId: number;
+  image: string;
+  participants: User[];
   error?: string;
 };
 
@@ -27,12 +31,5 @@ export type User = {
   id: number;
   email: string;
   rooms: Room[];
-};
-
-export type Room = {
-  id: number;
-  name: string;
-  ownerUserId: number;
-  image: string;
-  participants: User[];
+  error?: string;
 };

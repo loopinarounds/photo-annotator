@@ -3,6 +3,7 @@ import type { Room, RoomsResponse } from "../types";
 import { privateApiRequest } from "../api";
 import Loading from "../components/Loading";
 import { useUser } from "../hooks/useUser";
+import { RoomsList } from "../components/RoomsList";
 
 export function Home() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -18,9 +19,7 @@ export function Home() {
         return;
       }
 
-      const response = await privateApiRequest<RoomsResponse>(
-        `/${user.id}/rooms`
-      );
+      const response = await privateApiRequest<RoomsResponse>(`/rooms`);
 
       if (response.error) {
         alert(response.error);
@@ -41,16 +40,7 @@ export function Home() {
 
   return (
     <div>
-      <h1>Rooms</h1>
-      {rooms.length === 0 ? (
-        <p>No rooms found</p>
-      ) : (
-        <ul>
-          {rooms.map((room) => (
-            <li key={room.id}>{room.name}</li>
-          ))}
-        </ul>
-      )}
+      {rooms.length === 0 ? <p>No rooms found</p> : <RoomsList rooms={rooms} />}
     </div>
   );
 }

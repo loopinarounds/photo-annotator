@@ -1,26 +1,29 @@
 import { useNavigate } from "react-router-dom";
 import CreateRoomDialog from "./CreateRoomDialog";
 import { useState } from "react";
+import { privateApiRequest } from "../api";
+import { useAuth } from "../hooks/useAuth";
 
 export function Sidebar() {
   const navigate = useNavigate();
-  const userEmail = localStorage.getItem("userEmail");
+  const { user } = useAuth();
   const [isCreateRoomDialogOpen, setIsCreateRoomDialogOpen] = useState(false);
 
   const openRoomDialog = () => {
     setIsCreateRoomDialogOpen(true);
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
+  const handleLogout = async () => {
+    await privateApiRequest("/logout", {
+      method: "POST",
+    });
     navigate("/login");
   };
 
   return (
     <div className="w-64 h-full bg-gray-800 text-white flex flex-col">
       <div className="p-4 border-b border-gray-700">
-        <h2 className="text-lg font-semibold">Welcome </h2>
-        <p className="text-sm">{userEmail}</p>
+        <h2 className="text-lg font-semibold">Welcome {user?.email}</h2>
       </div>
       <div className="flex-grow p-4">
         {" "}

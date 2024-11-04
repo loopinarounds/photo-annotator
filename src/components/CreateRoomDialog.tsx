@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { privateApiRequest } from "../api";
 import { useUser } from "../hooks/useUser";
-import { RoomResponse } from "../types";
+import { Room } from "../types";
 
 type CreateRoomDialogProps = {
   isOpen: boolean;
@@ -24,7 +24,7 @@ export function CreateRoomDialog({ isOpen, onClose }: CreateRoomDialogProps) {
     formData.append("name", roomName);
     formData.append("file", file);
 
-    const response = await privateApiRequest<RoomResponse>(`/create-room`, {
+    const response = await privateApiRequest<Room>(`/create-room`, {
       method: "POST",
       body: formData,
     });
