@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Annotation } from "../types/Annotations";
+import { Annotation } from "../types";
 
 export function Annotator() {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);

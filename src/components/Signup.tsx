@@ -14,9 +14,14 @@ function Signup() {
       body: { email, password },
     });
 
-    console.log(response);
+    if (response.error) {
+      alert(response.error);
+    }
 
-    //TOOD: call login function and store data etc - redirect to home
+    const { token, userId } = response;
+
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("userId", userId);
   };
 
   return (

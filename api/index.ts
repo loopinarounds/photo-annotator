@@ -17,24 +17,39 @@ app.use(bodyParser());
 app.use(cors());
 app.use(koajwt({ secret: SECRET_KEY }).unless({ path: [/^\/public/] }));
 
-// Signup route
 router.post("/public/signup", async (ctx) => {
   const { email, password } = ctx.request.body as {
     email: string;
     password: string;
   };
 
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (user) {
+    ctx.status = 400;
+    ctx.body = { error: "User already exists" };
+    return;
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  await prisma.user.create({
+  const newUser = await prisma.user.create({
     data: {
       email,
       password: hashedPassword,
     },
   });
 
-  ctx.body = { message: "Signup successful" };
   ctx.status = 200;
+
+  const token = jwt.sign({ id: newUser.id }, SECRET_KEY, {
+    expiresIn: "1h",
+  });
+  ctx.body = { token, userId: newUser.id };
 });
 
 router.post("/public/login", async (ctx) => {
