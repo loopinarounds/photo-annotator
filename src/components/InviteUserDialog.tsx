@@ -1,23 +1,31 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { privateApiRequest } from "../api";
 
 type InviteUserDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (email: string) => void;
+  roomId: number;
 };
 
 export function InviteUserDialog({
   isOpen,
   onClose,
-  onSubmit,
+  roomId,
 }: InviteUserDialogProps) {
   const [email, setEmail] = useState("");
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    onSubmit(email);
-    setEmail("");
-    onClose();
+    try {
+      await privateApiRequest(`/${roomId}/invite-to-room`, {
+        method: "POST",
+        body: { email, roomId },
+      });
+      setEmail("");
+      onClose();
+    } catch (error) {
+      alert("Failed to invite user");
+    }
   };
 
   if (!isOpen) return null;
@@ -44,15 +52,15 @@ export function InviteUserDialog({
             <button
               type="button"
               onClick={onClose}
-              className="mr-2 bg-gray-300 text-gray-700 py-2 px-4 rounded"
+              className="mr-2 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="bg-blue-500 text-white py-2 px-4 rounded"
+              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
             >
-              Submit
+              Invite
             </button>
           </div>
         </form>
@@ -60,5 +68,3 @@ export function InviteUserDialog({
     </div>
   );
 }
-
-export default InviteUserDialog;

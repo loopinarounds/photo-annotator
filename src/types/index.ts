@@ -1,9 +1,16 @@
 export type Annotation = {
+  id: number;
   x: number;
   y: number;
-  width: number;
-  height: number;
   text: string;
+  authorId: number;
+  roomId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  author: {
+    id: number;
+    email: string;
+  };
 };
 
 export type LoginResponse = {
@@ -17,8 +24,16 @@ export type Room = {
   id: number;
   name: string;
   ownerUserId: number;
-  image: string;
-  participants: User[];
+  liveblocksRoomId: string;
+  imageUrl: string | null;
+  imageFileName: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  participants: Array<{
+    id: number;
+    email: string;
+  }>;
+  annotations: Annotation[];
   error?: string;
 };
 

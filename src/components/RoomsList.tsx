@@ -25,9 +25,9 @@ export function RoomsList({ rooms }: RoomsListProps) {
             {ownedRooms.map((room) => (
               <li key={room.id} className="bg-white rounded-lg shadow p-4">
                 <Link to={`/room/${room.id}`} className="hover:opacity-75">
-                  {room.image && (
+                  {room.imageUrl && (
                     <img
-                      src={room.image}
+                      src={room.imageUrl}
                       alt={room.name}
                       className="w-full h-40 object-cover rounded-md mb-2"
                     />
@@ -52,10 +52,10 @@ export function RoomsList({ rooms }: RoomsListProps) {
             {participantRooms.map((room) => (
               <li key={room.id} className="bg-white rounded-lg shadow p-4">
                 <Link to={`/room/${room.id}`} className="hover:opacity-75">
-                  {room.image && (
+                  {room.imageUrl && (
                     <img
-                      src={room.image}
-                      alt={room.name}
+                      src={room.imageUrl}
+                      alt={room.imageFileName || ""}
                       className="w-full h-40 object-cover rounded-md mb-2"
                     />
                   )}

@@ -9,20 +9,45 @@ datasource db {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-
-  rooms Room[]
+  id                 Int          @id @default(autoincrement())
+  email              String       @unique
+  password           String
+  liveblocksUserId   String       @unique
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  rooms              Room[]
+  participatingRooms Room[]       @relation("RoomParticipants")
+  createdAnnotations Annotation[] @relation("AuthorAnnotations") // Add this relation
 }
 
 model Room {
-  id               Int    @id @default(autoincrement())
-  ownerUserId      Int
+  id               Int          @id @default(autoincrement())
   name             String
-  liveblocksRoomId String
-  imageUrl         String
-  imageFileName    String
-  annotations      Json[]
-  participants     User[]
+  ownerUserId      Int
+  liveblocksRoomId String       @unique
+  imageUrl         String?
+  imageFileName    String?
+  owner            User         @relation(fields: [ownerUserId], references: [id])
+  participants     User[]       @relation("RoomParticipants")
+  annotations      Annotation[] @relation("RoomAnnotations") // Name the relation
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model Annotation {
+  id        Int      @id @default(autoincrement())
+  x         Float
+  y         Float
+  text      String
+  authorId  Int
+  roomId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Named relations
+  author User @relation("AuthorAnnotations", fields: [authorId], references: [id])
+  room   Room @relation("RoomAnnotations", fields: [roomId], references: [id])
+
+  @@index([roomId])
+  @@index([authorId])
 }

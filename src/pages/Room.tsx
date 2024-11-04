@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { privateApiRequest } from "../api";
 import { type Room } from "../types";
 import Loading from "../components/Loading";
-import RoomView from "../components/RoomView";
+import { RoomViewWithLiveblocks } from "../components/RoomView";
 import { useAuth } from "../hooks/useAuth";
 
 export function Room() {
@@ -33,9 +33,9 @@ export function Room() {
   }
 
   return (
-    <RoomView
+    <RoomViewWithLiveblocks
       id={room.id}
-      image={room.image}
+      image={room.imageUrl ?? undefined}
       name={room.name}
       ownerUserId={room.ownerUserId}
       participants={room.participants ?? []}

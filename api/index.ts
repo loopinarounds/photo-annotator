@@ -6,11 +6,17 @@ import bcrypt from "bcrypt";
 import cors from "@koa/cors";
 import multer from "koa-multer";
 import session from "koa-session";
+import { Liveblocks } from "@liveblocks/node";
+
 // import { uploadToSupbaseS3 } from "./s3";
 
 const app = new Koa();
 const router = new Router();
 const prisma = new PrismaClient();
+
+const liveblocks = new Liveblocks({
+  secret: process.env.LIVEBLOCKS_SECRET_KEY!,
+});
 
 const SECRET_KEY = "your_secret_key"; // Will Use a secure key in production
 
@@ -72,6 +78,118 @@ app.use(async (ctx, next) => {
   })(ctx, next);
 });
 
+// Updated auth route
+router.post("/api/liveblocks-auth", async (ctx) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.session?.userId },
+      include: {
+        rooms: {
+          include: {
+            participants: true, // Include participants for access check
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      ctx.status = 404;
+      ctx.body = { error: "User not found" };
+      return;
+    }
+
+    const session = liveblocks.prepareSession(user.liveblocksUserId, {
+      userInfo: {
+        name: user.email,
+        email: user.email,
+      },
+    });
+
+    // Grant access to rooms using liveblocksRoomId
+    user.rooms.forEach((room) => {
+      if (
+        room.ownerUserId === user.id ||
+        room.participants?.some((p) => p.id === user.id)
+      ) {
+        session.allow(room.liveblocksRoomId, session.FULL_ACCESS);
+      }
+    });
+
+    const { status, body } = await session.authorize();
+    ctx.status = status;
+    ctx.body = body;
+  } catch (error) {
+    console.error("Liveblocks auth error:", error);
+    ctx.status = 500;
+    ctx.body = { error: "Failed to authenticate with Liveblocks" };
+  }
+});
+
+// New route to save annotations
+router.post("/api/room/:roomId/annotations", async (ctx) => {
+  try {
+    const roomId = parseInt(ctx.params.roomId);
+    const { annotations } = ctx.request.body as {
+      annotations: Array<{
+        x: number;
+        y: number;
+        text: string;
+        authorId: string;
+        createdAt: number;
+      }>;
+    };
+
+    // Verify room access
+    const room = await prisma.room.findFirst({
+      where: {
+        id: roomId,
+        OR: [
+          { ownerUserId: ctx.session?.userId },
+          { participants: { some: { id: ctx.session?.userId } } },
+        ],
+      },
+    });
+
+    if (!room) {
+      ctx.status = 403;
+      ctx.body = { error: "Access denied or room not found" };
+      return;
+    }
+
+    // Update room with new annotations
+    const updatedRoom = await prisma.room.update({
+      where: { id: roomId },
+      data: {
+        annotations: {
+          createMany: {
+            data: annotations.map((ann) => ({
+              x: ann.x,
+              y: ann.y,
+              text: ann.text,
+              authorId: parseInt(ann.authorId),
+              createdAt: new Date(ann.createdAt),
+            })),
+          },
+        },
+        updatedAt: new Date(),
+      },
+      include: {
+        annotations: true, // Add this line to include annotations in the response
+      },
+    });
+
+    ctx.status = 200;
+    ctx.body = {
+      message: "Annotations saved successfully",
+      annotations: updatedRoom.annotations,
+    };
+  } catch (error) {
+    console.error("Error saving annotations:", error);
+    ctx.status = 500;
+    ctx.body = { error: "Failed to save annotations" };
+  }
+});
+
 router.post("/public/signup", async (ctx) => {
   const { email, password } = ctx.request.body as {
     email: string;
@@ -88,12 +206,17 @@ router.post("/public/signup", async (ctx) => {
     return;
   }
 
+  const liveblocksUserId = `user-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 9)}`;
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const newUser = await prisma.user.create({
     data: {
       email,
       password: hashedPassword,
+      liveblocksUserId: liveblocksUserId,
     },
   });
 
@@ -245,6 +368,18 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
 
   const roomIdInt = parseInt(roomId);
 
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (!user) {
+    ctx.status = 404;
+    ctx.body = { error: "User not found" };
+    return;
+  }
+
   const room = await prisma.room.update({
     where: {
       id: roomIdInt,
@@ -290,6 +425,109 @@ router.post("/api/create-room", upload.single("file"), async (ctx) => {
     console.error("Error handling file upload:", error);
     ctx.status = 500;
     ctx.body = { error: "Failed to process file upload" };
+  }
+});
+
+router.post("/api/room/:roomId/annotations", async (ctx) => {
+  try {
+    const roomId = parseInt(ctx.params.roomId);
+    const userId = ctx.session?.userId;
+    const { x, y, text } = ctx.request.body as {
+      x: number;
+      y: number;
+      text: string;
+    };
+
+    // Verify room access
+    const room = await prisma.room.findFirst({
+      where: {
+        id: roomId,
+        OR: [
+          { ownerUserId: userId },
+          { participants: { some: { id: userId } } },
+        ],
+      },
+    });
+
+    if (!room) {
+      ctx.status = 403;
+      ctx.body = { error: "Access denied or room not found" };
+      return;
+    }
+
+    // Create new annotation
+    const annotation = await prisma.annotation.create({
+      data: {
+        x,
+        y,
+        text,
+        authorId: userId,
+        roomId,
+      },
+      include: {
+        author: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+
+    ctx.status = 200;
+    ctx.body = annotation;
+  } catch (error) {
+    console.error("Error saving annotation:", error);
+    ctx.status = 500;
+    ctx.body = { error: "Failed to save annotation" };
+  }
+});
+
+// Get annotations for a room
+router.get("/api/room/:roomId/annotations", async (ctx) => {
+  try {
+    const roomId = parseInt(ctx.params.roomId);
+    const userId = ctx.session?.userId;
+
+    // Verify access
+    const room = await prisma.room.findFirst({
+      where: {
+        id: roomId,
+        OR: [
+          { ownerUserId: userId },
+          { participants: { some: { id: userId } } },
+        ],
+      },
+    });
+
+    if (!room) {
+      ctx.status = 403;
+      ctx.body = { error: "Access denied or room not found" };
+      return;
+    }
+
+    // Get annotations with author info
+    const annotations = await prisma.annotation.findMany({
+      where: {
+        roomId,
+      },
+      include: {
+        author: {
+          select: {
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    ctx.status = 200;
+    ctx.body = annotations;
+  } catch (error) {
+    console.error("Error fetching annotations:", error);
+    ctx.status = 500;
+    ctx.body = { error: "Failed to fetch annotations" };
   }
 });
 
