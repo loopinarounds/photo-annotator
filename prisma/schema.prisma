@@ -18,9 +18,10 @@ model User {
 
 model Room {
   id               Int    @id @default(autoincrement())
+  ownerUserId      Int
   name             String
   liveblocksRoomId String
   image            String
   annotations      Json[]
-  users            User[]
+  participants     User[]
 }

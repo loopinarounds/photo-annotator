@@ -1,20 +1,20 @@
 // SignupForm.jsx
 import { useState } from "react";
+import { apiRequest } from "../api";
 
 function Signup() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const response = await fetch("/signup", {
+
+    const response = await apiRequest("/public/signup", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, password }),
+      body: { email, password },
     });
-    const data = await response.json();
+
+    console.log(response);
 
     //TOOD: call login function and store data etc - redirect to home
   };
@@ -25,11 +25,11 @@ function Signup() {
         <form onSubmit={handleSubmit}>
           <h2 className="text-2xl font-bold mb-4 text-center">Sign Up</h2>
           <div className="mb-4">
-            <label className="block text-gray-700">Username</label>
+            <label className="block text-gray-700">Email</label>
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border rounded"
               required
             />

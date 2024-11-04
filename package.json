@@ -24,6 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "koa": "^2.14.2",
     "koa-bodyparser": "^4.4.1",
+    "koa-cors": "^0.0.16",
     "koa-jwt": "^4.0.4",
     "koa-router": "^13.0.1",
     "react": "^18.2.0",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.7",
+    "@types/koa__cors": "^5.0.0",
     "@types/koa-bodyparser": "^4.3.12",
     "@types/koa-router": "^7.4.8",
     "@types/react": "^18.2.14",

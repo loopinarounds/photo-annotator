@@ -5,6 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import koajwt from "koa-jwt";
 import bcrypt from "bcrypt";
+import cors from "@koa/cors";
 
 const app = new Koa();
 const router = new Router();
@@ -13,36 +14,18 @@ const prisma = new PrismaClient();
 const SECRET_KEY = "your_secret_key"; // Will Use a secure key in production
 
 app.use(bodyParser());
+app.use(cors());
+app.use(koajwt({ secret: SECRET_KEY }).unless({ path: [/^\/public/] }));
 
-app.use(async function (ctx, next) {
-  return next().catch((err) => {
-    if (401 == err.status) {
-      ctx.status = 401;
-      ctx.body = "Protected resource, use Authorization header to get access\n";
-    } else {
-      throw err;
-    }
-  });
-});
-
-app.use(function (ctx, next) {
-  if (ctx.url.match(/^\/public/)) {
-    ctx.body = "unprotected\n";
-  } else {
-    return next();
-  }
-});
-
-// unprotected middleware here
-
-router.post("/signup", async (ctx) => {
+// Signup route
+router.post("/public/signup", async (ctx) => {
   const { email, password } = ctx.request.body as {
     email: string;
     password: string;
   };
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Save user to the database
   await prisma.user.create({
     data: {
       email,
@@ -50,10 +33,11 @@ router.post("/signup", async (ctx) => {
     },
   });
 
-  ctx.body = { message: "User registered successfully" };
+  ctx.body = { message: "Signup successful" };
+  ctx.status = 200;
 });
 
-router.post("/login", async (ctx) => {
+router.post("/public/login", async (ctx) => {
   const { email, password } = ctx.request.body as {
     email: string;
     password: string;
@@ -80,14 +64,126 @@ router.post("/login", async (ctx) => {
   const token = jwt.sign({ id: user.id }, SECRET_KEY, {
     expiresIn: "1h",
   });
-  ctx.body = { token }; // Send the token and userId back to the client to send to local storage
+  ctx.body = { token, userId: user.id };
 });
 
-app.use(koajwt({ secret: "shared-secret" }));
+router.get("/api/rooms", async (ctx) => {
+  const userId = ctx.state.user.id;
 
-//  protected middleware here
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      rooms: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
 
-router.get("/", async (_ctx) => {});
+  if (!user) {
+    ctx.status = 404;
+    ctx.body = { error: "User not found" };
+    return;
+  }
+
+  ctx.status = 200;
+  const rooms = user.rooms;
+
+  ctx.body = rooms;
+});
+
+router.post("/api/create-room", async (ctx) => {
+  const userId = ctx.state.user.id;
+  const { name } = ctx.request.body as { name: string };
+
+  const room = await prisma.room.create({
+    data: {
+      name,
+      ownerUserId: userId,
+      image: "test",
+      liveblocksRoomId: "test",
+    },
+  });
+
+  if (!room) {
+    ctx.status = 500;
+    ctx.body = { error: "Error creating room" };
+    return;
+  }
+
+  ctx.status = 200;
+  ctx.body = room;
+});
+
+router.get("/api/room/:roomId", async (ctx) => {
+  const roomId = ctx.params.roomId;
+
+  const roomIdInt = parseInt(roomId);
+
+  const room = await prisma.room.findUnique({
+    where: {
+      id: roomIdInt,
+    },
+    include: {
+      participants: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  if (!room) {
+    ctx.status = 404;
+    ctx.body = { error: "Room not found" };
+    return;
+  }
+
+  if (
+    ctx.state.user.id !== room.ownerUserId ||
+    !room.participants.find((user) => user.id === ctx.state.user.id)
+  ) {
+    ctx.status = 403;
+    ctx.body = { error: "You are not allowed to access this room" };
+    return;
+  }
+
+  ctx.status = 200;
+  ctx.body = room;
+});
+
+router.post("/api/:roomId/invite-to-room", async (ctx) => {
+  const { email } = ctx.request.body as { email: string };
+  const roomId = ctx.params.roomId;
+
+  const roomIdInt = parseInt(roomId);
+
+  const room = await prisma.room.update({
+    where: {
+      id: roomIdInt,
+    },
+    data: {
+      participants: {
+        connect: {
+          email,
+        },
+      },
+    },
+  });
+
+  if (!room) {
+    ctx.status = 404;
+    ctx.body = { error: "Room not found" };
+    return;
+  }
+
+  ctx.status = 200;
+  ctx.body = room;
+});
 
 app.use(router.routes()).use(router.allowedMethods());
 
