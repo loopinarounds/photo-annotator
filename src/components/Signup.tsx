@@ -1,13 +1,25 @@
-// SignupForm.jsx
 import { useState } from "react";
 import { apiRequest } from "../api";
+import { useNavigate } from "react-router-dom";
 
 function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const navigate = useNavigate();
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address.");
+      return; // Stop the submission if the email is invalid
+    }
 
     const response = await apiRequest("/public/signup", {
       method: "POST",
@@ -22,6 +34,8 @@ function Signup() {
 
     localStorage.setItem("authToken", token);
     localStorage.setItem("userId", userId);
+
+    navigate("/");
   };
 
   return (
@@ -38,6 +52,7 @@ function Signup() {
               className="w-full px-3 py-2 border rounded"
               required
             />
+            {error && <p className="text-red-500 text-sm">{error}</p>}
           </div>
           <div className="mb-4">
             <label className="block text-gray-700">Password</label>

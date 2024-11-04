@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { apiRequest } from "../api";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -12,10 +14,16 @@ function Login() {
       body: { email, password },
     });
 
+    if (response.error) {
+      alert(response.error);
+    }
+
     const { token, userId } = response;
 
     localStorage.setItem("authToken", token);
     localStorage.setItem("userId", userId);
+
+    navigate("/");
   };
 
   return (
