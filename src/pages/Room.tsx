@@ -22,8 +22,6 @@ export function Room() {
         return;
       }
 
-      console.log(response);
-
       setRoom(response);
     };
 

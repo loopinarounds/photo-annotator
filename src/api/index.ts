@@ -50,7 +50,7 @@ export async function privateApiRequest<T>(
     method,
     headers,
     body: requestBody,
-    credentials: "include", // Add this
+    credentials: "include",
   });
 
   return await response.json();

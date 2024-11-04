@@ -27,14 +27,12 @@ const SESSION_CONFIG = {
   renew: false,
 } as const;
 
-// Apply session middleware
 app.use(session(SESSION_CONFIG, app));
 
-// Configure CORS with credentials
 app.use(
   cors({
     credentials: true,
-    origin: "http://localhost:5173", // Your frontend URL
+    origin: "http://localhost:5173",
   })
 );
 
@@ -47,7 +45,6 @@ const upload = multer({
   },
 });
 
-// Auth middleware
 app.use(async (ctx, next) => {
   if (ctx.path.startsWith("/public")) {
     return await next();

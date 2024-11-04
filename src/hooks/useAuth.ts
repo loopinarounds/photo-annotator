@@ -48,12 +48,11 @@ export function useAuth() {
         user: null,
       });
     }
-  }, []); // Empty dependency array since privateApiRequest shouldn't change
+  }, []);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  // Prevent unnecessary re-renders by memoizing the return value
   return authState;
 }
