@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import koajwt from "koa-jwt";
 import bcrypt from "bcrypt";
 import cors from "@koa/cors";
+import { uploadToSupbaseS3 } from "./s3";
 
 const app = new Koa();
 const router = new Router();
@@ -124,29 +125,6 @@ router.get("/api/:userId/rooms", async (ctx) => {
   ctx.body = rooms;
 });
 
-router.post("/api/create-room", async (ctx) => {
-  const userId = ctx.state.user.id;
-  const { name } = ctx.request.body as { name: string };
-
-  const room = await prisma.room.create({
-    data: {
-      name,
-      ownerUserId: userId,
-      image: "test",
-      liveblocksRoomId: "test",
-    },
-  });
-
-  if (!room) {
-    ctx.status = 500;
-    ctx.body = { error: "Error creating room" };
-    return;
-  }
-
-  ctx.status = 200;
-  ctx.body = room;
-});
-
 router.get("/api/room/:roomId", async (ctx) => {
   const roomId = ctx.params.roomId;
 
@@ -209,6 +187,34 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
 
   ctx.status = 200;
   ctx.body = room;
+});
+
+router.post("/api/create-room", async (ctx) => {
+  const { name, file, userId } = ctx.request.body as {
+    name: string;
+    file: File;
+    userId: number;
+  };
+
+  console.log(file);
+  console.log(name);
+  console.log(userId);
+
+  const fileData = await uploadToSupbaseS3(file);
+
+  console.log(fileData);
+
+  // const room = await prisma.room.create({
+  //   data: {
+  //     name,
+  //     image: fileData,
+  //     liveblocksRoomId: "test",
+  //     ownerUserId: userId,
+  //   },
+  // });
+
+  ctx.status = 200;
+  // ctx.body = room;
 });
 
 app.use(router.routes()).use(router.allowedMethods());

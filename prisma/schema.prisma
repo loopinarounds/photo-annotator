@@ -21,7 +21,8 @@ model Room {
   ownerUserId      Int
   name             String
   liveblocksRoomId String
-  image            String
+  imageUrl         String
+  imageFileName    String
   annotations      Json[]
   participants     User[]
 }

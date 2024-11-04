@@ -5,7 +5,7 @@ import Loading from "../components/Loading";
 import { useUser } from "../hooks/useUser";
 
 export function Home() {
-  const [rooms, setRooms] = useState<Room[] | []>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const user = useUser();
 
@@ -19,7 +19,7 @@ export function Home() {
       }
 
       const response = await privateApiRequest<RoomsResponse>(
-        `/${user?.id}/rooms`
+        `/${user.id}/rooms`
       );
 
       if (response.error) {
@@ -27,28 +27,30 @@ export function Home() {
         setLoading(false);
         return;
       }
-      setRooms(response.rooms);
+
+      setRooms(Array.isArray(response.rooms) ? response.rooms : []);
       setLoading(false);
     };
 
     getRooms();
-  }, [privateApiRequest, user]);
+  }, [user]);
 
   if (loading) {
     return <Loading />;
   }
 
-  if (rooms.length === 0) {
-    return (
-      <div>
-        <h1>No rooms found</h1>
-      </div>
-    );
-  }
-
   return (
     <div>
-      <h1>Home</h1>
+      <h1>Rooms</h1>
+      {rooms.length === 0 ? (
+        <p>No rooms found</p>
+      ) : (
+        <ul>
+          {rooms.map((room) => (
+            <li key={room.id}>{room.name}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

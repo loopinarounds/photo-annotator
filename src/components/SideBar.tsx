@@ -1,8 +1,15 @@
 import { useNavigate } from "react-router-dom";
+import CreateRoomDialog from "./CreateRoomDialog";
+import { useState } from "react";
 
 export function Sidebar() {
   const navigate = useNavigate();
   const userEmail = localStorage.getItem("userEmail");
+  const [isCreateRoomDialogOpen, setIsCreateRoomDialogOpen] = useState(false);
+
+  const openRoomDialog = () => {
+    setIsCreateRoomDialogOpen(true);
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -24,6 +31,14 @@ export function Sidebar() {
                 Home
               </a>
             </li>
+            <li>
+              <button
+                className="block p-2 rounded hover:bg-gray-700"
+                onClick={openRoomDialog}
+              >
+                Create a Room
+              </button>
+            </li>
           </ul>
         </nav>
       </div>
@@ -37,6 +52,10 @@ export function Sidebar() {
           Logout
         </button>
       </div>
+      <CreateRoomDialog
+        isOpen={isCreateRoomDialogOpen}
+        onClose={() => setIsCreateRoomDialogOpen(false)}
+      />
     </div>
   );
 }
