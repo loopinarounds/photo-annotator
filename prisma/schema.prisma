@@ -18,6 +18,7 @@ model User {
 
 model Room {
   id               Int    @id @default(autoincrement())
+  name             String
   liveblocksRoomId String
   image            String
   annotations      Json[]
