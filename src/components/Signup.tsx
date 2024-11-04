@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { apiRequest } from "../api";
+import { publicApiRequest } from "../api";
 import { useNavigate } from "react-router-dom";
 
 function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
   const navigate = useNavigate();
+
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -18,10 +18,10 @@ function Signup() {
 
     if (!isValidEmail(email)) {
       setError("Please enter a valid email address.");
-      return; // Stop the submission if the email is invalid
+      return;
     }
 
-    const response = await apiRequest("/public/signup", {
+    const response = await publicApiRequest("/signup", {
       method: "POST",
       body: { email, password },
     });

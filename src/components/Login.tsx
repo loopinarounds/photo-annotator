@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { apiRequest } from "../api";
+import { publicApiRequest } from "../api";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
@@ -9,7 +9,7 @@ function Login() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const response = await apiRequest("/public/login", {
+    const response = await publicApiRequest("/login", {
       method: "POST",
       body: { email, password },
     });
