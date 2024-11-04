@@ -8,7 +8,7 @@ import bcrypt from "bcrypt";
 
 const app = new Koa();
 const router = new Router();
-// const prisma = new PrismaClient();
+const prisma = new PrismaClient();
 
 const SECRET_KEY = "your_secret_key"; // Will Use a secure key in production
 
@@ -36,19 +36,19 @@ app.use(function (ctx, next) {
 // unprotected middleware here
 
 router.post("/signup", async (ctx) => {
-  const { username, password } = ctx.request.body as {
-    username: string;
+  const { email, password } = ctx.request.body as {
+    email: string;
     password: string;
   };
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // Save user to the database
-  // await prisma.user.create({
-  //   data: {
-  //     username,
-  //     password: hashedPassword,
-  //   },
-  // });
+  await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+    },
+  });
 
   ctx.body = { message: "User registered successfully" };
 });
@@ -58,11 +58,11 @@ router.post("/login", async (ctx) => {
     email: string;
     password: string;
   };
-  // const user = await prisma.user.findUnique({
-  //   where: {
-  //     email,
-  //   },
-  // });
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
 
   if (!user) {
     ctx.status = 401;
@@ -77,10 +77,10 @@ router.post("/login", async (ctx) => {
     return;
   }
 
-  // const token = jwt.sign({ email: user.email }, SECRET_KEY, {
-  //   expiresIn: "1h",
-  // });
-  // ctx.body = { token }; // Send the token and userId back to the client to send to local storage
+  const token = jwt.sign({ id: user.id }, SECRET_KEY, {
+    expiresIn: "1h",
+  });
+  ctx.body = { token }; // Send the token and userId back to the client to send to local storage
 });
 
 app.use(koajwt({ secret: "shared-secret" }));
