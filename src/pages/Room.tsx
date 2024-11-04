@@ -5,6 +5,7 @@ import { type Room } from "../types";
 import Loading from "../components/Loading";
 import { RoomViewWithLiveblocks } from "../components/RoomView";
 import { useAuth } from "../hooks/useAuth";
+import { type Annotation } from "../types";
 
 export function Room() {
   const { roomId } = useParams();
@@ -15,14 +16,27 @@ export function Room() {
     const getRoom = async () => {
       if (!user) return;
 
-      const response = await privateApiRequest<Room>(`/room/${roomId}`);
+      const [roomResponse, annotationsResponse] = await Promise.all([
+        privateApiRequest<Room>(`/room/${roomId}`),
+        privateApiRequest<{ annotations: Annotation[] }>(
+          `/room/${roomId}/annotations`
+        ),
+      ]);
 
-      if (response.error) {
-        alert(response.error);
+      if (roomResponse.error) {
+        alert(roomResponse.error);
         return;
       }
 
-      setRoom(response);
+      setRoom({
+        ...roomResponse,
+        annotations: annotationsResponse.annotations
+          ? annotationsResponse.annotations.map((a) => ({
+              ...a,
+              createdAt: new Date(a.createdAt).toISOString(),
+            }))
+          : [],
+      });
     };
 
     getRoom();
@@ -39,6 +53,8 @@ export function Room() {
       name={room.name}
       ownerUserId={room.ownerUserId}
       participants={room.participants ?? []}
+      initialAnnotations={room.annotations}
+      currentUserId={user?.id}
     />
   );
 }

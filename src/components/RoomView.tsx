@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
+import { LiveList } from "@liveblocks/client";
 import { InviteUserDialog } from "./InviteUserDialog";
-
 import {
   RoomProvider,
   useMyPresence,
@@ -8,10 +8,19 @@ import {
   useStorage,
   useMutation,
 } from "../liveblocks.config";
+import { useAnnotationSync } from "../hooks/useAnnotationSync";
 
 type Participant = {
   id: number;
   email: string;
+};
+
+type Annotation = {
+  x: number;
+  y: number;
+  text: string;
+  authorId: number;
+  createdAt?: string;
 };
 
 interface RoomViewProps {
@@ -20,9 +29,10 @@ interface RoomViewProps {
   image?: string;
   ownerUserId: number;
   participants?: Participant[];
+  initialAnnotations?: Annotation[];
+  currentUserId?: number;
 }
 
-// This is the wrapper component that provides Liveblocks context
 export function RoomViewWithLiveblocks(props: RoomViewProps) {
   return (
     <RoomProvider
@@ -32,7 +42,7 @@ export function RoomViewWithLiveblocks(props: RoomViewProps) {
         isTyping: false,
       }}
       initialStorage={{
-        annotations: [],
+        annotations: new LiveList<Annotation>(props.initialAnnotations || []),
       }}
     >
       <RoomView {...props} />
@@ -40,29 +50,47 @@ export function RoomViewWithLiveblocks(props: RoomViewProps) {
   );
 }
 
-function RoomView({ name, image, participants = [], id }: RoomViewProps) {
+function RoomView({
+  name,
+  image,
+  participants = [],
+  id,
+  currentUserId,
+}: RoomViewProps) {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+
   const imageRef = useRef<HTMLDivElement>(null);
   const [draggedAnnotation, setDraggedAnnotation] = useState<number | null>(
     null
   );
 
   const [myPresence, updateMyPresence] = useMyPresence();
-
   const others = useOthers();
+  const annotations = useStorage((root) => root.annotations);
 
-  const storage = useStorage((root) => root);
+  useAnnotationSync(id);
 
-  const addAnnotation = useMutation(({ storage }, annotation) => {
-    storage.get("annotations").push(annotation);
+  const addAnnotation = useMutation(({ storage }, annotation: Annotation) => {
+    if (!annotation.authorId) {
+      console.error("Author ID is missing");
+      return;
+    }
+
+    storage.get("annotations").push({
+      ...annotation,
+      authorId: Number(annotation.authorId),
+    });
   }, []);
+
   const updateAnnotation = useMutation(({ storage }, { index, x, y }) => {
     const annotations = storage.get("annotations");
-    annotations[index] = {
-      ...annotations[index],
+    const existing = annotations.get(index);
+    annotations.set(index, {
+      text: existing?.text ?? "",
+      authorId: currentUserId!,
       x,
       y,
-    };
+    });
   }, []);
 
   const getRelativeCoordinates = (clientX: number, clientY: number) => {
@@ -124,7 +152,7 @@ function RoomView({ name, image, participants = [], id }: RoomViewProps) {
             );
           })}
 
-          {storage?.annotations.map((annotation, index) => (
+          {annotations?.map((annotation, index) => (
             <div
               key={index}
               className={`absolute bg-white p-2 rounded shadow cursor-move
@@ -137,10 +165,10 @@ function RoomView({ name, image, participants = [], id }: RoomViewProps) {
               draggable="true"
               onDragStart={(e) => {
                 setDraggedAnnotation(index);
-                e.dataTransfer.setDragImage(new Image(), 0, 0); // Hide default drag image
+                e.dataTransfer.setDragImage(new Image(), 0, 0);
               }}
               onDrag={(e) => {
-                if (e.clientX === 0 && e.clientY === 0) return; // Ignore invalid drag events
+                if (e.clientX === 0 && e.clientY === 0) return;
                 const coords = getRelativeCoordinates(e.clientX, e.clientY);
                 if (coords) {
                   updateAnnotation({ index, ...coords });
@@ -164,10 +192,11 @@ function RoomView({ name, image, participants = [], id }: RoomViewProps) {
               x: myPresence.cursor.x,
               y: myPresence.cursor.y,
               text,
-              authorId: "current-user-id",
+              authorId: currentUserId!,
             });
           }
         }}
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
       >
         Add Annotation
       </button>

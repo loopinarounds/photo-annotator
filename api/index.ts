@@ -432,10 +432,14 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
   try {
     const roomId = parseInt(ctx.params.roomId);
     const userId = ctx.session?.userId;
-    const { x, y, text } = ctx.request.body as {
-      x: number;
-      y: number;
-      text: string;
+    const { annotations } = ctx.request.body as {
+      annotations: Array<{
+        x: number;
+        y: number;
+        text: string;
+        authorId: string;
+        createdAt: number;
+      }>;
     };
 
     // Verify room access
@@ -455,30 +459,33 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
       return;
     }
 
-    // Create new annotation
-    const annotation = await prisma.annotation.create({
-      data: {
-        x,
-        y,
-        text,
-        authorId: userId,
+    // Delete existing annotations for this room
+    await prisma.annotation.deleteMany({
+      where: { roomId },
+    });
+
+    // Create new annotations
+    const createdAnnotations = await prisma.annotation.createMany({
+      data: annotations.map((ann) => ({
+        x: ann.x,
+        y: ann.y,
+        text: ann.text,
+        authorId: parseInt(ann.authorId),
         roomId,
-      },
-      include: {
-        author: {
-          select: {
-            email: true,
-          },
-        },
-      },
+        createdAt: new Date(ann.createdAt),
+        updatedAt: new Date(),
+      })),
     });
 
     ctx.status = 200;
-    ctx.body = annotation;
+    ctx.body = {
+      message: "Annotations saved successfully",
+      count: createdAnnotations.count,
+    };
   } catch (error) {
-    console.error("Error saving annotation:", error);
+    console.error("Error saving annotations:", error);
     ctx.status = 500;
-    ctx.body = { error: "Failed to save annotation" };
+    ctx.body = { error: "Failed to save annotations" };
   }
 });
 

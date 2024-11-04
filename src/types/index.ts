@@ -5,8 +5,8 @@ export type Annotation = {
   text: string;
   authorId: number;
   roomId: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
   author: {
     id: number;
     email: string;

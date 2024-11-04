@@ -1,4 +1,4 @@
-import { createClient, BaseUserMeta } from "@liveblocks/client";
+import { createClient, BaseUserMeta, LiveList } from "@liveblocks/client";
 import { createRoomContext } from "@liveblocks/react";
 
 const client = createClient({
@@ -31,13 +31,15 @@ type Presence = {
   isTyping: boolean;
 };
 
+type Annotation = {
+  x: number;
+  y: number;
+  text: string;
+  authorId: number;
+};
+
 type Storage = {
-  annotations: Array<{
-    x: number;
-    y: number;
-    text: string;
-    authorId: string;
-  }>;
+  annotations: LiveList<Annotation>;
 };
 
 type UserMeta = BaseUserMeta & {
