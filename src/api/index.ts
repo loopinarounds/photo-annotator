@@ -2,7 +2,7 @@ import { isLoggedIn } from "../auth";
 
 const API_BASE_URL = "http://localhost:3000"; // Can be changed to the deployed API URL
 
-export async function publicApiRequest(
+export async function publicApiRequest<T>(
   endpoint: string,
   {
     method = "GET",
@@ -12,7 +12,7 @@ export async function publicApiRequest(
     body?: Record<string, unknown> | null;
     token?: string | null;
   } = {}
-) {
+): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -26,18 +26,18 @@ export async function publicApiRequest(
   return await response.json();
 }
 
-export async function privateApiRequest(
+export async function privateApiRequest<T>(
   endpoint: string,
   {
     method = "GET",
     body = null,
-    token = localStorage.getItem("authToken"),
+    token = localStorage.getItem("token"),
   }: {
     method?: string;
     body?: Record<string, unknown> | null;
     token?: string | null;
   } = {}
-) {
+): Promise<T> {
   if (!token) {
     throw new Error("No token found");
   }

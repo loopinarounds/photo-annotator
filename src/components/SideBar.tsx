@@ -1,0 +1,44 @@
+import { useNavigate } from "react-router-dom";
+
+export function Sidebar() {
+  const navigate = useNavigate();
+  const userEmail = localStorage.getItem("userEmail");
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
+  };
+
+  return (
+    <div className="w-64 h-full bg-gray-800 text-white flex flex-col">
+      <div className="p-4 border-b border-gray-700">
+        <h2 className="text-lg font-semibold">Welcome </h2>
+        <p className="text-sm">{userEmail}</p>
+      </div>
+      <div className="flex-grow p-4">
+        {" "}
+        <nav className="flex-grow">
+          <ul className="space-y-4">
+            <li>
+              <a href="/" className="block p-2 rounded hover:bg-gray-700">
+                Home
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+      <div className="p-4 mt-auto mb-4">
+        {" "}
+        {/* Added mb-4 for margin-bottom */}
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default Sidebar;

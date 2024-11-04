@@ -6,6 +6,23 @@ export type Annotation = {
   text: string;
 };
 
+export type LoginResponse = {
+  token: string;
+  userId: string;
+  userEmail: string;
+  error?: string;
+};
+
+export type RoomResponse = {
+  room: Room;
+  error?: string;
+};
+
+export type RoomsResponse = {
+  rooms: Room[];
+  error?: string;
+};
+
 export type User = {
   id: number;
   email: string;

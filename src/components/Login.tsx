@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { publicApiRequest } from "../api";
 import { useNavigate } from "react-router-dom";
+import { LoginResponse } from "../types";
+import { setLocalData } from "../utils/setLocalData";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -9,19 +11,19 @@ function Login() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const response = await publicApiRequest("/login", {
+    const response = await publicApiRequest<LoginResponse>("/login", {
       method: "POST",
       body: { email, password },
     });
 
     if (response.error) {
       alert(response.error);
+      return;
     }
 
-    const { token, userId } = response;
+    const { token, userId, userEmail } = response;
 
-    localStorage.setItem("authToken", token);
-    localStorage.setItem("userId", userId);
+    setLocalData({ token, userId, userEmail });
 
     navigate("/");
   };

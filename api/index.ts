@@ -17,6 +17,11 @@ app.use(bodyParser());
 app.use(cors());
 app.use(koajwt({ secret: SECRET_KEY }).unless({ path: [/^\/public/] }));
 
+app.use(async (ctx, next) => {
+  ctx.state.user = null;
+  await next();
+});
+
 router.post("/public/signup", async (ctx) => {
   const { email, password } = ctx.request.body as {
     email: string;
@@ -49,7 +54,8 @@ router.post("/public/signup", async (ctx) => {
   const token = jwt.sign({ id: newUser.id }, SECRET_KEY, {
     expiresIn: "1h",
   });
-  ctx.body = { token, userId: newUser.id };
+
+  ctx.body = { token, userId: newUser.id, userEmail: newUser.email };
 });
 
 router.post("/public/login", async (ctx) => {
@@ -79,21 +85,28 @@ router.post("/public/login", async (ctx) => {
   const token = jwt.sign({ id: user.id }, SECRET_KEY, {
     expiresIn: "1h",
   });
-  ctx.body = { token, userId: user.id };
+
+  ctx.body = { token, userId: user.id, userEmail: user.email };
 });
 
-router.get("/api/rooms", async (ctx) => {
-  const userId = ctx.state.user.id;
+router.get("/api/:userId/rooms", async (ctx) => {
+  const userId = ctx.params.userId;
 
   const user = await prisma.user.findUnique({
     where: {
-      id: userId,
+      id: parseInt(userId),
     },
     select: {
       rooms: {
         select: {
           id: true,
           name: true,
+          participants: {
+            select: {
+              id: true,
+              email: true,
+            },
+          },
         },
       },
     },
@@ -137,11 +150,9 @@ router.post("/api/create-room", async (ctx) => {
 router.get("/api/room/:roomId", async (ctx) => {
   const roomId = ctx.params.roomId;
 
-  const roomIdInt = parseInt(roomId);
-
   const room = await prisma.room.findUnique({
     where: {
-      id: roomIdInt,
+      id: parseInt(roomId),
     },
     include: {
       participants: {

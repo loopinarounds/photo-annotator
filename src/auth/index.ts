@@ -1,7 +1,7 @@
 import { jwtDecode } from "jwt-decode";
 
 export function isLoggedIn(): boolean {
-  const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("token");
 
   if (token) {
     const isValid = isTokenValid(token);

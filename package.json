@@ -28,6 +28,7 @@
     "koa-cors": "^0.0.16",
     "koa-jwt": "^4.0.4",
     "koa-router": "^13.0.1",
+    "koa-session": "^6.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.27.0"
@@ -38,6 +39,7 @@
     "@types/koa__cors": "^5.0.0",
     "@types/koa-bodyparser": "^4.3.12",
     "@types/koa-router": "^7.4.8",
+    "@types/koa-session": "^6.4.5",
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
     "@typescript-eslint/eslint-plugin": "^5.61.0",
