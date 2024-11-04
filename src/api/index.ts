@@ -34,7 +34,7 @@ export async function privateApiRequest<T>(
     token = localStorage.getItem("token"),
   }: {
     method?: string;
-    body?: Record<string, unknown> | null;
+    body?: Record<string, unknown> | null | FormData;
     token?: string | null;
   } = {}
 ): Promise<T> {
@@ -49,14 +49,24 @@ export async function privateApiRequest<T>(
   }
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   };
+
+  const requestBody = !body
+    ? null
+    : body instanceof FormData
+    ? body
+    : JSON.stringify(body);
+
+  // Only add Content-Type if it's NOT FormData
+  if (!(body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const response = await fetch(`${API_BASE_URL}/api${endpoint}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : null,
+    body: requestBody,
   });
 
   return await response.json();

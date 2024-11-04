@@ -1,11 +1,13 @@
 import Koa from "koa";
 import Router from "koa-router";
 import bodyParser from "koa-bodyparser";
+
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import koajwt from "koa-jwt";
 import bcrypt from "bcrypt";
 import cors from "@koa/cors";
+import multer from "koa-multer";
 import { uploadToSupbaseS3 } from "./s3";
 
 const app = new Koa();
@@ -14,9 +16,29 @@ const prisma = new PrismaClient();
 
 const SECRET_KEY = "your_secret_key"; // Will Use a secure key in production
 
-app.use(bodyParser());
 app.use(cors());
+app.use(multer().any());
+
+const upload = multer({
+  storage: multer.memoryStorage(), // Store file in memory
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+});
+
 app.use(koajwt({ secret: SECRET_KEY }).unless({ path: [/^\/public/] }));
+
+app.use(async (ctx, next) => {
+  if (ctx.path === "/api/create-room") {
+    await next();
+    return;
+  }
+
+  await bodyParser({
+    enableTypes: ["json"],
+    jsonLimit: "100mb",
+  })(ctx, next);
+});
 
 app.use(async (ctx, next) => {
   ctx.state.user = null;
@@ -189,33 +211,27 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
   ctx.body = room;
 });
 
-router.post("/api/create-room", async (ctx) => {
-  const { name, file, userId } = ctx.request.body as {
-    name: string;
-    file: File;
-    userId: number;
-  };
+router.post(
+  "/api/create-room",
+  upload.single("file"), // 'file' should match the field name in your FormData
+  async (ctx) => {
+    try {
+      const file = (ctx.req as any).files[0]; // Access the uploaded file
 
-  console.log(file);
-  console.log(name);
-  console.log(userId);
+      const { buffer, originalname, mimetype } = file;
 
-  const fileData = await uploadToSupbaseS3(file);
+      const upload = await uploadToSupbaseS3(buffer, originalname, mimetype);
 
-  console.log(fileData);
+      console.log(upload);
 
-  // const room = await prisma.room.create({
-  //   data: {
-  //     name,
-  //     image: fileData,
-  //     liveblocksRoomId: "test",
-  //     ownerUserId: userId,
-  //   },
-  // });
-
-  ctx.status = 200;
-  // ctx.body = room;
-});
+      ctx.body = 200;
+    } catch (error) {
+      console.error("Error handling file upload:", error);
+      ctx.status = 500;
+      ctx.body = { error: "Failed to process file upload" };
+    }
+  }
+);
 
 app.use(router.routes()).use(router.allowedMethods());
 

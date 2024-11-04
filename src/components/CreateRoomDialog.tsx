@@ -19,14 +19,14 @@ export function CreateRoomDialog({ isOpen, onClose }: CreateRoomDialogProps) {
       return;
     }
 
-    console.log(file);
+    const formData = new FormData();
+    formData.append("userId", String(user.id));
+    formData.append("name", roomName);
+    formData.append("file", file);
+
     const response = await privateApiRequest<RoomResponse>(`/create-room`, {
       method: "POST",
-      body: {
-        userId: user.id,
-        name: roomName,
-        file: File,
-      },
+      body: formData,
     });
 
     if (response.error) {
