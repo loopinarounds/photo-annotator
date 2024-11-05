@@ -80,6 +80,8 @@ app.use(async (ctx, next) => {
 
 router.post("/api/liveblocks-auth", async (ctx) => {
   try {
+    console.log("Auth request for user ID:", ctx.session?.userId);
+
     const user = await prisma.user.findUnique({
       where: { id: ctx.session?.userId },
       include: {
@@ -92,10 +94,17 @@ router.post("/api/liveblocks-auth", async (ctx) => {
     });
 
     if (!user) {
+      console.log("User not found");
       ctx.status = 404;
       ctx.body = { error: "User not found" };
       return;
     }
+
+    console.log("User found:", {
+      id: user.id,
+      liveblocksUserId: user.liveblocksUserId,
+      roomCount: user.rooms.length,
+    });
 
     const session = liveblocks.prepareSession(user.liveblocksUserId, {
       userInfo: {
@@ -104,16 +113,21 @@ router.post("/api/liveblocks-auth", async (ctx) => {
       },
     });
 
+    // Log all rooms and their access grants
     user.rooms.forEach((room) => {
-      if (
-        room.ownerUserId === user.id ||
-        room.participants?.some((p) => p.id === user.id)
-      ) {
-        session.allow(room.liveblocksRoomId, session.FULL_ACCESS);
-      }
+      console.log("Granting access to room:", {
+        roomId: room.id,
+        liveblocksRoomId: room.liveblocksRoomId,
+        ownerUserId: room.ownerUserId,
+        currentUserId: user.id,
+      });
+
+      session.allow(room.liveblocksRoomId, session.FULL_ACCESS);
     });
 
     const { status, body } = await session.authorize();
+    console.log("Liveblocks auth response:", { status, body });
+
     ctx.status = status;
     ctx.body = body;
   } catch (error) {

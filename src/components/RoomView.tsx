@@ -28,12 +28,13 @@ interface RoomViewProps {
   participants?: Participant[];
   currentUserId?: number;
   initialAnnotations?: Annotation[];
+  liveblocksRoomId: string;
 }
 
 export function RoomViewWithLiveblocks(props: RoomViewProps) {
   return (
     <RoomProvider
-      id={props.id.toString()}
+      id={props.liveblocksRoomId}
       initialPresence={{
         isAddingAnnotation: false,
         cursor: null,
