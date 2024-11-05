@@ -8,10 +8,8 @@ export function useAnnotationSync(roomId: number) {
   useEffect(() => {
     if (!annotations) return;
 
-    const saveAnnotations = async () => {
+    const debouncedSave = setTimeout(async () => {
       try {
-        console.log("Saving annotations", annotations);
-
         await privateApiRequest(`/room/${roomId}/annotations`, {
           method: "POST",
           body: {
@@ -27,9 +25,8 @@ export function useAnnotationSync(roomId: number) {
       } catch (error) {
         console.error("Failed to save annotations:", error);
       }
-    };
+    }, 1000);
 
-    const timeoutId = setTimeout(saveAnnotations, 10);
-    return () => clearTimeout(timeoutId);
+    return () => clearTimeout(debouncedSave);
   }, [annotations, roomId]);
 }

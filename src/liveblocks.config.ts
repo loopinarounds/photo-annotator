@@ -28,7 +28,7 @@ const client = createClient({
 });
 type Presence = {
   cursor: { x: number; y: number } | null;
-  isTyping: boolean;
+  isAddingAnnotation: boolean;
 };
 
 type Annotation = {
