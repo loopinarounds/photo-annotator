@@ -57,7 +57,7 @@ export function CreateRoomDialog({ isOpen, onClose }: CreateRoomDialogProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-96">
         <h2 className="text-xl font-semibold mb-4 text-black">Create Map</h2>
         <form onSubmit={handleSubmit}>

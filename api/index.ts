@@ -380,9 +380,10 @@ router.post("/api/create-room", upload.single("file"), async (ctx) => {
   try {
     const file = (ctx.req as any).files[0];
 
+    const roomName = ctx.query.roomName as string;
+
     const buffer = file.buffer;
     const originalname = file.originalname;
-    const roomName = file.roomName;
 
     const upload = await uploadToSupbaseS3(buffer, originalname);
 

@@ -30,13 +30,16 @@ export function Sidebar() {
         <nav className="flex-grow">
           <ul className="space-y-4">
             <li>
-              <a href="/" className="block p-2 rounded hover:bg-gray-700">
+              <a
+                href="/"
+                className="block p-2 rounded hover:bg-gray-700 w-full"
+              >
                 Home
               </a>
             </li>
             <li>
               <button
-                className="block p-2 rounded hover:bg-gray-700"
+                className="block p-2 rounded hover:bg-gray-700 w-full text-left"
                 onClick={openRoomDialog}
               >
                 Create a Map
@@ -49,7 +52,7 @@ export function Sidebar() {
         {" "}
         <button
           onClick={handleLogout}
-          className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700"
+          className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 block"
         >
           Logout
         </button>
