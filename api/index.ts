@@ -151,67 +151,6 @@ router.post("/api/liveblocks-auth", async (ctx) => {
     ctx.body = { error: "Failed to authenticate with Liveblocks" };
   }
 });
-// router.post("/api/room/:roomId/annotations", async (ctx) => {
-//   try {
-//     const roomId = parseInt(ctx.params.roomId);
-//     const { annotations } = ctx.request.body as {
-//       annotations: Array<{
-//         x: number;
-//         y: number;
-//         text: string;
-//         authorId: string;
-//         createdAt: number;
-//       }>;
-//     };
-
-//     const room = await prisma.room.findFirst({
-//       where: {
-//         id: roomId,
-//         OR: [
-//           { ownerUserId: ctx.session?.userId },
-//           { participants: { some: { id: ctx.session?.userId } } },
-//         ],
-//       },
-//     });
-
-//     if (!room) {
-//       ctx.status = 403;
-//       ctx.body = { error: "Access denied or room not found" };
-//       return;
-//     }
-
-//     const updatedRoom = await prisma.room.update({
-//       where: { id: roomId },
-//       data: {
-//         annotations: {
-//           createMany: {
-//             data: annotations.map((ann) => ({
-//               x: ann.x,
-//               y: ann.y,
-//               text: ann.text,
-//               authorId: parseInt(ann.authorId),
-//               createdAt: new Date(ann.createdAt),
-//             })),
-//           },
-//         },
-//         updatedAt: new Date(),
-//       },
-//       include: {
-//         annotations: true,
-//       },
-//     });
-
-//     ctx.status = 200;
-//     ctx.body = {
-//       message: "Annotations saved successfully",
-//       annotations: updatedRoom.annotations,
-//     };
-//   } catch (error) {
-//     console.error("Error saving annotations:", error);
-//     ctx.status = 500;
-//     ctx.body = { error: "Failed to save annotations" };
-//   }
-// });
 
 router.post("/public/signup", async (ctx) => {
   const { email, password } = ctx.request.body as {
@@ -485,7 +424,6 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
         y: number;
         text: string;
         authorId: number;
-        roomId: number;
         createdAt: number;
       }>;
     };
@@ -506,47 +444,55 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
       return;
     }
 
-    const newAnnotations = annotations.filter((ann) => !ann.id);
-    const existingAnnotations = annotations.filter((ann) => ann.id);
-
     const updatedAnnotations = await prisma.$transaction(async (tx) => {
-      // Delete annotations that are no longer present
-      const currentAnnotationIds = existingAnnotations.map((ann) => ann.id);
+      const currentAnnotationCoords = annotations.map((ann) => ({
+        x: ann.x,
+        y: ann.y,
+        authorId: ann.authorId,
+      }));
+
       await tx.annotation.deleteMany({
         where: {
           roomId,
           NOT: {
-            id: {
-              in: currentAnnotationIds as number[],
-            },
+            OR: currentAnnotationCoords.map((coord) => ({
+              AND: {
+                x: coord.x,
+                y: coord.y,
+                authorId: coord.authorId,
+              },
+            })),
           },
         },
       });
 
-      // Update existing annotations
-      for (const ann of existingAnnotations) {
-        await tx.annotation.update({
-          where: { id: ann.id as number },
-          data: {
-            x: ann.x,
-            y: ann.y,
+      const upsertPromises = annotations.map((ann) =>
+        tx.annotation.upsert({
+          where: {
+            roomId_x_y_authorId: {
+              roomId,
+              x: ann.x,
+              y: ann.y,
+              authorId: ann.authorId,
+            },
+          },
+          update: {
             text: ann.text,
             updatedAt: new Date(),
           },
-        });
-      }
+          create: {
+            x: ann.x,
+            y: ann.y,
+            text: ann.text,
+            authorId: ann.authorId,
+            roomId,
+            createdAt: new Date(ann.createdAt),
+            updatedAt: new Date(),
+          },
+        })
+      );
 
-      await tx.annotation.createMany({
-        data: newAnnotations.map((ann) => ({
-          x: ann.x,
-          y: ann.y,
-          text: ann.text,
-          authorId: ann.authorId,
-          roomId,
-          createdAt: new Date(ann.createdAt),
-          updatedAt: new Date(),
-        })),
-      });
+      await Promise.all(upsertPromises);
 
       return tx.annotation.findMany({
         where: { roomId },

@@ -17,7 +17,7 @@ model User {
   updatedAt          DateTime     @updatedAt
   rooms              Room[]
   participatingRooms Room[]       @relation("RoomParticipants")
-  createdAnnotations Annotation[] @relation("AuthorAnnotations") // Add this relation
+  createdAnnotations Annotation[] @relation("AuthorAnnotations")
 }
 
 model Room {
@@ -29,7 +29,7 @@ model Room {
   imageFileName    String?
   owner            User         @relation(fields: [ownerUserId], references: [id])
   participants     User[]       @relation("RoomParticipants")
-  annotations      Annotation[] @relation("RoomAnnotations") // Name the relation
+  annotations      Annotation[] @relation("RoomAnnotations")
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 }
@@ -44,10 +44,10 @@ model Annotation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Named relations
   author User @relation("AuthorAnnotations", fields: [authorId], references: [id])
   room   Room @relation("RoomAnnotations", fields: [roomId], references: [id])
 
+  @@unique([roomId, x, y, authorId])
   @@index([roomId])
   @@index([authorId])
 }
