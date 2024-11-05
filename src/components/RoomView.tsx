@@ -80,6 +80,11 @@ function RoomView({
     annotations.set(index, updatedAnnotation);
   }, []);
 
+  const deleteAnnotation = useMutation(({ storage }, index: number) => {
+    const annotations = storage.get("annotations");
+    annotations.delete(index);
+  }, []);
+
   const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isAddingAnnotation || !imageRef.current) return;
 
@@ -124,13 +129,22 @@ function RoomView({
           {annotations?.map((annotation, index) => (
             <div
               key={index}
-              className="absolute bg-white p-2 rounded shadow"
+              className="absolute bg-white p-2 rounded shadow group"
               style={{
                 left: `${annotation.x}%`,
                 top: `${annotation.y}%`,
                 transform: "translate(-50%, -50%)",
               }}
             >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteAnnotation(index);
+                }}
+                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold leading-none transition-colors"
+              >
+                ×
+              </button>
               {editingAnnotation === index ? (
                 <input
                   type="text"
