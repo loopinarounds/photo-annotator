@@ -8,7 +8,7 @@ import multer from "koa-multer";
 import session from "koa-session";
 import { Liveblocks } from "@liveblocks/node";
 
-// import { uploadToSupbaseS3 } from "./s3";
+import { uploadToSupbaseS3 } from "./s3";
 
 const app = new Koa();
 const router = new Router();
@@ -78,7 +78,6 @@ app.use(async (ctx, next) => {
   })(ctx, next);
 });
 
-// Updated auth route
 router.post("/api/liveblocks-auth", async (ctx) => {
   try {
     const user = await prisma.user.findUnique({
@@ -86,7 +85,7 @@ router.post("/api/liveblocks-auth", async (ctx) => {
       include: {
         rooms: {
           include: {
-            participants: true, // Include participants for access check
+            participants: true,
           },
         },
       },
@@ -105,7 +104,6 @@ router.post("/api/liveblocks-auth", async (ctx) => {
       },
     });
 
-    // Grant access to rooms using liveblocksRoomId
     user.rooms.forEach((room) => {
       if (
         room.ownerUserId === user.id ||
@@ -125,7 +123,6 @@ router.post("/api/liveblocks-auth", async (ctx) => {
   }
 });
 
-// New route to save annotations
 router.post("/api/room/:roomId/annotations", async (ctx) => {
   try {
     const roomId = parseInt(ctx.params.roomId);
@@ -139,7 +136,6 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
       }>;
     };
 
-    // Verify room access
     const room = await prisma.room.findFirst({
       where: {
         id: roomId,
@@ -156,7 +152,6 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
       return;
     }
 
-    // Update room with new annotations
     const updatedRoom = await prisma.room.update({
       where: { id: roomId },
       data: {
@@ -174,7 +169,7 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
         updatedAt: new Date(),
       },
       include: {
-        annotations: true, // Add this line to include annotations in the response
+        annotations: true,
       },
     });
 
@@ -414,11 +409,31 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
 
 router.post("/api/create-room", upload.single("file"), async (ctx) => {
   try {
-    // const file = (ctx.req as any).files[0]; // Access the uploaded file
+    const file = (ctx.req as any).files[0];
 
-    // const upload = await uploadToSupbaseS3(buffer, originalname, mimetype);
+    const buffer = file.buffer;
+    const originalname = file.originalname;
 
-    //TODO: make sure we create prisma rooms for user
+    const upload = await uploadToSupbaseS3(buffer, originalname);
+
+    const fileUrl = `https://trgnfinfuhvsvmfoxqtj.supabase.co/storage/v1/s3/Images/${originalname}`;
+
+    if (!upload) {
+      ctx.status = 500;
+      ctx.body = { error: "Failed to upload file to S3" };
+      return;
+    }
+
+    await prisma.room.create({
+      data: {
+        imageUrl: fileUrl,
+        name: originalname,
+        liveblocksRoomId: `room-${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 9)}`,
+        ownerUserId: ctx.session?.userId,
+      },
+    });
 
     ctx.body = 200;
   } catch (error) {
