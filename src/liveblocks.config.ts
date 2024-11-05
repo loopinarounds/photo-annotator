@@ -32,10 +32,13 @@ type Presence = {
 };
 
 type Annotation = {
+  id: number | null;
+
   x: number;
   y: number;
   text: string;
   authorId: number;
+  roomId: number;
 };
 
 type Storage = {

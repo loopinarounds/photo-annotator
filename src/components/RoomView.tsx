@@ -22,6 +22,7 @@ interface RoomViewProps {
 }
 
 export function RoomViewWithLiveblocks(props: RoomViewProps) {
+  console.log(props.initialAnnotations);
   return (
     <RoomProvider
       id={props.liveblocksRoomId}
@@ -69,6 +70,7 @@ function RoomView({
 
   const updateAnnotationText = useMutation(({ storage }, { index, text }) => {
     const annotations = storage.get("annotations");
+
     const existing = annotations.get(index);
     if (!existing) return;
 

@@ -14,11 +14,13 @@ export function useAnnotationSync(roomId: number) {
           method: "POST",
           body: {
             annotations: annotations.map((ann) => ({
+              id: ann.id,
               x: ann.x,
               y: ann.y,
               text: ann.text,
               authorId: ann.authorId,
               createdAt: Date.now(),
+              roomId,
             })),
           },
         });

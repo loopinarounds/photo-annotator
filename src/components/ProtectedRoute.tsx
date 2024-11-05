@@ -24,7 +24,7 @@ export const ProtectedRoute = memo(function ProtectedRoute({
   return (
     <div className="flex h-screen">
       <Sidebar />
-      <div className="flex-grow">{element}</div>
+      <div className="flex-grow overflow-y-auto p-6">{element}</div>
     </div>
   );
 });
