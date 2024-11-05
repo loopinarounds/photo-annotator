@@ -130,7 +130,10 @@ function RoomView({
 
           {annotations?.map((annotation, index) => (
             <div
-              key={index}
+              key={
+                annotation.id ||
+                `temp-${annotation.x}-${annotation.y}-${annotation.authorId}`
+              }
               className="absolute bg-white p-2 rounded shadow group"
               style={{
                 left: `${annotation.x}%`,
