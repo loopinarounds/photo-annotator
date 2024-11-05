@@ -440,9 +440,9 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
 router.post("/api/create-room", upload.single("file"), async (ctx) => {
   try {
     const file = (ctx.req as any).files[0];
-    const name = (ctx.req as any).body.name;
+    const body = (ctx.req as any).body;
 
-    console.log(ctx.req);
+    console.log(body);
 
     const buffer = file.buffer;
     const originalname = file.originalname;
@@ -460,7 +460,7 @@ router.post("/api/create-room", upload.single("file"), async (ctx) => {
     await prisma.room.create({
       data: {
         imageUrl: fileUrl,
-        name: name,
+        name: "test",
         liveblocksRoomId: `room-${Date.now()}-${Math.random()
           .toString(36)
           .substring(2, 9)}`,

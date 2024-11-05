@@ -47,7 +47,6 @@ export function Sidebar() {
       </div>
       <div className="p-4 mt-auto mb-4">
         {" "}
-        {/* Added mb-4 for margin-bottom */}
         <button
           onClick={handleLogout}
           className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700"
