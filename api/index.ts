@@ -90,6 +90,12 @@ router.post("/api/liveblocks-auth", async (ctx) => {
             participants: true,
           },
         },
+        participatingRooms: {
+          // Add this to include rooms where user is a participant
+          include: {
+            participants: true,
+          },
+        },
       },
     });
 
@@ -103,7 +109,7 @@ router.post("/api/liveblocks-auth", async (ctx) => {
     console.log("User found:", {
       id: user.id,
       liveblocksUserId: user.liveblocksUserId,
-      roomCount: user.rooms.length,
+      roomCount: user.rooms.length + user.participatingRooms.length,
     });
 
     const session = liveblocks.prepareSession(user.liveblocksUserId, {
@@ -113,9 +119,21 @@ router.post("/api/liveblocks-auth", async (ctx) => {
       },
     });
 
-    // Log all rooms and their access grants
+    // Grant access to owned rooms
     user.rooms.forEach((room) => {
-      console.log("Granting access to room:", {
+      console.log("Granting access to owned room:", {
+        roomId: room.id,
+        liveblocksRoomId: room.liveblocksRoomId,
+        ownerUserId: room.ownerUserId,
+        currentUserId: user.id,
+      });
+
+      session.allow(room.liveblocksRoomId, session.FULL_ACCESS);
+    });
+
+    // Grant access to participating rooms
+    user.participatingRooms.forEach((room) => {
+      console.log("Granting access to participating room:", {
         roomId: room.id,
         liveblocksRoomId: room.liveblocksRoomId,
         ownerUserId: room.ownerUserId,
@@ -136,7 +154,6 @@ router.post("/api/liveblocks-auth", async (ctx) => {
     ctx.body = { error: "Failed to authenticate with Liveblocks" };
   }
 });
-
 router.post("/api/room/:roomId/annotations", async (ctx) => {
   try {
     const roomId = parseInt(ctx.params.roomId);
@@ -318,6 +335,7 @@ router.get("/api/rooms", async (ctx) => {
     },
     select: {
       rooms: true,
+      participatingRooms: true,
     },
   });
 
@@ -328,7 +346,8 @@ router.get("/api/rooms", async (ctx) => {
   }
 
   ctx.status = 200;
-  const rooms = user.rooms;
+
+  const rooms = [...user.rooms, ...user.participatingRooms];
 
   ctx.body = { rooms };
 
@@ -407,7 +426,7 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
       id: ctx.session?.userId,
     },
     data: {
-      rooms: { connect: { id: roomIdInt } },
+      participatingRooms: { connect: { id: roomIdInt } },
     },
   });
 
