@@ -506,7 +506,6 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
       return;
     }
 
-    // Separate new and existing annotations
     const newAnnotations = annotations.filter((ann) => !ann.id);
     const existingAnnotations = annotations.filter((ann) => ann.id);
 
