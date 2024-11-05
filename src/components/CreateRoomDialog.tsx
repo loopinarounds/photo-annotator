@@ -24,10 +24,13 @@ export function CreateRoomDialog({ isOpen, onClose }: CreateRoomDialogProps) {
     formData.append("name", roomName);
     formData.append("file", file);
 
-    const response = await privateApiRequest<Room>(`/create-room`, {
-      method: "POST",
-      body: formData,
-    });
+    const response = await privateApiRequest<Room>(
+      `/create-room?roomName=${roomName}`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
     if (response.error) {
       alert(response.error);
