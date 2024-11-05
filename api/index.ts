@@ -270,7 +270,11 @@ router.get("/api/rooms", async (ctx) => {
       id: userId,
     },
     select: {
-      rooms: true,
+      rooms: {
+        include: {
+          participants: true,
+        },
+      },
       participatingRooms: true,
     },
   });
@@ -282,6 +286,8 @@ router.get("/api/rooms", async (ctx) => {
   }
 
   ctx.status = 200;
+
+  console.log(user.rooms);
 
   const rooms = [...user.rooms, ...user.participatingRooms];
 
@@ -329,22 +335,39 @@ router.get("/api/room/:roomId", async (ctx) => {
 router.post("/api/:roomId/invite-to-room", async (ctx) => {
   const { email } = ctx.request.body as { email: string };
   const roomId = ctx.params.roomId;
-
   const roomIdInt = parseInt(roomId);
 
-  const user = await prisma.user.findUnique({
+  const invitedUser = await prisma.user.findUnique({
     where: {
       email,
     },
   });
 
-  if (!user) {
+  if (!invitedUser) {
     ctx.status = 404;
     ctx.body = { error: "User not found" };
     return;
   }
 
-  const room = await prisma.room.update({
+  const room = await prisma.room.findUnique({
+    where: {
+      id: roomIdInt,
+    },
+  });
+
+  if (!room) {
+    ctx.status = 404;
+    ctx.body = { error: "Room not found" };
+    return;
+  }
+
+  if (room.ownerUserId === invitedUser.id) {
+    ctx.status = 400;
+    ctx.body = { error: "Cannot invite the owner to be a participant" };
+    return;
+  }
+
+  await prisma.room.update({
     where: {
       id: roomIdInt,
     },
@@ -356,21 +379,6 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
       },
     },
   });
-
-  await prisma.user.update({
-    where: {
-      id: ctx.session?.userId,
-    },
-    data: {
-      participatingRooms: { connect: { id: roomIdInt } },
-    },
-  });
-
-  if (!room) {
-    ctx.status = 404;
-    ctx.body = { error: "Room not found" };
-    return;
-  }
 
   ctx.status = 200;
   ctx.body = room;
@@ -395,7 +403,7 @@ router.post("/api/create-room", upload.single("file"), async (ctx) => {
       return;
     }
 
-    await prisma.room.create({
+    const room = await prisma.room.create({
       data: {
         imageUrl: fileUrl,
         name: roomName,
@@ -403,6 +411,15 @@ router.post("/api/create-room", upload.single("file"), async (ctx) => {
           .toString(36)
           .substring(2, 9)}`,
         ownerUserId: ctx.session?.userId,
+      },
+    });
+
+    await prisma.user.update({
+      where: {
+        id: ctx.session?.userId,
+      },
+      data: {
+        rooms: { connect: { id: room.id } },
       },
     });
 

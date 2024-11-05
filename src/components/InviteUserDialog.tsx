@@ -17,12 +17,22 @@ export function InviteUserDialog({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      await privateApiRequest(`/${roomId}/invite-to-room`, {
-        method: "POST",
-        body: { email, roomId },
-      });
+      const response = await privateApiRequest<any>(
+        `/${roomId}/invite-to-room`,
+        {
+          method: "POST",
+          body: { email, roomId },
+        }
+      );
+
+      if (response.error) {
+        alert(response.error);
+        return;
+      }
+
       setEmail("");
       onClose();
+      alert("User invited successfully");
     } catch (error) {
       alert("Failed to invite user");
     }

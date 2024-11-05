@@ -34,7 +34,7 @@ export function RoomsList({ rooms }: RoomsListProps) {
                   )}
                   <h3 className="font-medium">{room.name}</h3>
                   <p className="text-sm text-gray-500">
-                    {room.participants?.length || 0} participants
+                    {room.participants?.length || 0} participant(s)
                   </p>
                 </Link>
               </li>
@@ -61,7 +61,7 @@ export function RoomsList({ rooms }: RoomsListProps) {
                   )}
                   <h3 className="font-medium">{room.name}</h3>
                   <p className="text-sm text-gray-500">
-                    {room.participants?.length || 0} participants
+                    {room.participants?.length || 0} participant(s)
                   </p>
                 </Link>
               </li>

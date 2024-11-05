@@ -22,7 +22,6 @@ interface RoomViewProps {
 }
 
 export function RoomViewWithLiveblocks(props: RoomViewProps) {
-  console.log(props.initialAnnotations);
   return (
     <RoomProvider
       id={props.liveblocksRoomId}
@@ -49,6 +48,10 @@ function RoomView({
 }: RoomViewProps) {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [editingText, setEditingText] = useState("");
+
+  const filteredParticipants = participants.filter(
+    (participant) => participant.id !== currentUserId
+  );
 
   const [editingAnnotation, setEditingAnnotation] = useState<number | null>(
     null
@@ -205,7 +208,7 @@ function RoomView({
           <div className="w-2/3">
             <h2 className="text-xl font-semibold mb-4">Participants</h2>
             <ul className="space-y-2">
-              {participants.map((participant) => (
+              {filteredParticipants.map((participant) => (
                 <li key={participant.id} className="text-gray-700">
                   {participant.email}
                 </li>

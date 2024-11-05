@@ -21,7 +21,6 @@ export function CreateRoomDialog({ isOpen, onClose }: CreateRoomDialogProps) {
 
     const formData = new FormData();
     formData.append("userId", String(user.id));
-    formData.append("name", roomName);
     formData.append("file", file);
 
     const response = await privateApiRequest<Room>(
