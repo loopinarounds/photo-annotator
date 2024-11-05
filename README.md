@@ -1,8 +1,8 @@
 # photo-annotator
 
-npm i
-npm run build
-npm run dev
+```npm i```\n
+```npm run build```\n
+```npm run dev```\n
 
 server: localhost:3000
 client: localhost:5173
