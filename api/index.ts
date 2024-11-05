@@ -440,16 +440,14 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
 router.post("/api/create-room", upload.single("file"), async (ctx) => {
   try {
     const file = (ctx.req as any).files[0];
-    const body = (ctx.req as any).body;
-
-    console.log(body);
 
     const buffer = file.buffer;
     const originalname = file.originalname;
+    const roomName = file.roomName;
 
     const upload = await uploadToSupbaseS3(buffer, originalname);
 
-    const fileUrl = `https://trgnfinfuhvsvmfoxqtj.supabase.co/storage/v1/s3/Images/${originalname}`;
+    const fileUrl = `https://trgnfinfuhvsvmfoxqtj.supabase.co/storage/v1/object/public/Images/${originalname}`;
 
     if (!upload) {
       ctx.status = 500;
@@ -460,7 +458,7 @@ router.post("/api/create-room", upload.single("file"), async (ctx) => {
     await prisma.room.create({
       data: {
         imageUrl: fileUrl,
-        name: "test",
+        name: roomName,
         liveblocksRoomId: `room-${Date.now()}-${Math.random()
           .toString(36)
           .substring(2, 9)}`,
