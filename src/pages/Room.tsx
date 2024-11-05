@@ -38,8 +38,6 @@ export function Room() {
     return <Loading />;
   }
 
-  console.log(room);
-
   return (
     <RoomViewWithLiveblocks
       id={room.id}

@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { LiveList } from "@liveblocks/client";
 import { InviteUserDialog } from "./InviteUserDialog";
+import { Annotation, Participant } from "../types";
 import {
   RoomProvider,
   useMyPresence,
@@ -8,18 +9,6 @@ import {
   useMutation,
 } from "../liveblocks.config";
 import { useAnnotationSync } from "../hooks/useAnnotationSync";
-
-type Participant = {
-  id: number;
-  email: string;
-};
-
-type Annotation = {
-  x: number;
-  y: number;
-  text: string;
-  authorId: number;
-};
 
 interface RoomViewProps {
   id: number;
@@ -103,6 +92,8 @@ function RoomView({
       y,
       text: "",
       authorId: currentUserId!,
+      id: 0,
+      roomId: id,
     });
 
     updateMyPresence({ isAddingAnnotation: false });

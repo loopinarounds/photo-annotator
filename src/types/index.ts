@@ -5,12 +5,6 @@ export type Annotation = {
   text: string;
   authorId: number;
   roomId: number;
-  createdAt: string;
-  updatedAt: string;
-  author: {
-    id: number;
-    email: string;
-  };
 };
 
 export type LoginResponse = {
@@ -47,4 +41,9 @@ export type User = {
   email: string;
   rooms: Room[];
   error?: string;
+};
+
+export type Participant = {
+  id: number;
+  email: string;
 };
