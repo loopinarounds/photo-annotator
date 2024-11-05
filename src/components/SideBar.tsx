@@ -39,7 +39,7 @@ export function Sidebar() {
                 className="block p-2 rounded hover:bg-gray-700"
                 onClick={openRoomDialog}
               >
-                Create a Room
+                Create a Map
               </button>
             </li>
           </ul>

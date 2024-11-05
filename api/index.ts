@@ -91,7 +91,6 @@ router.post("/api/liveblocks-auth", async (ctx) => {
           },
         },
         participatingRooms: {
-          // Add this to include rooms where user is a participant
           include: {
             participants: true,
           },
@@ -119,7 +118,6 @@ router.post("/api/liveblocks-auth", async (ctx) => {
       },
     });
 
-    // Grant access to owned rooms
     user.rooms.forEach((room) => {
       console.log("Granting access to owned room:", {
         roomId: room.id,
@@ -131,7 +129,6 @@ router.post("/api/liveblocks-auth", async (ctx) => {
       session.allow(room.liveblocksRoomId, session.FULL_ACCESS);
     });
 
-    // Grant access to participating rooms
     user.participatingRooms.forEach((room) => {
       console.log("Granting access to participating room:", {
         roomId: room.id,
@@ -443,6 +440,9 @@ router.post("/api/:roomId/invite-to-room", async (ctx) => {
 router.post("/api/create-room", upload.single("file"), async (ctx) => {
   try {
     const file = (ctx.req as any).files[0];
+    const name = (ctx.req as any).body.name;
+
+    console.log(ctx.req);
 
     const buffer = file.buffer;
     const originalname = file.originalname;
@@ -460,7 +460,7 @@ router.post("/api/create-room", upload.single("file"), async (ctx) => {
     await prisma.room.create({
       data: {
         imageUrl: fileUrl,
-        name: originalname,
+        name: name,
         liveblocksRoomId: `room-${Date.now()}-${Math.random()
           .toString(36)
           .substring(2, 9)}`,
@@ -490,7 +490,6 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
       }>;
     };
 
-    // Verify room access
     const room = await prisma.room.findFirst({
       where: {
         id: roomId,
@@ -507,28 +506,29 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
       return;
     }
 
-    // Delete existing annotations for this room
-    await prisma.annotation.deleteMany({
-      where: { roomId },
-    });
+    // doing this because of issues with annotation Ids in updateMany, in future I would change this
+    const updatedAnnotations = await prisma.$transaction(async (tx) => {
+      await tx.annotation.deleteMany({
+        where: { roomId },
+      });
 
-    // Create new annotations
-    const createdAnnotations = await prisma.annotation.createMany({
-      data: annotations.map((ann) => ({
-        x: ann.x,
-        y: ann.y,
-        text: ann.text,
-        authorId: parseInt(ann.authorId),
-        roomId,
-        createdAt: new Date(ann.createdAt),
-        updatedAt: new Date(),
-      })),
+      return tx.annotation.createMany({
+        data: annotations.map((ann) => ({
+          x: ann.x,
+          y: ann.y,
+          text: ann.text,
+          authorId: parseInt(ann.authorId),
+          roomId,
+          createdAt: new Date(ann.createdAt),
+          updatedAt: new Date(),
+        })),
+      });
     });
 
     ctx.status = 200;
     ctx.body = {
       message: "Annotations saved successfully",
-      count: createdAnnotations.count,
+      count: updatedAnnotations.count,
     };
   } catch (error) {
     console.error("Error saving annotations:", error);
@@ -537,13 +537,11 @@ router.post("/api/room/:roomId/annotations", async (ctx) => {
   }
 });
 
-// Get annotations for a room
 router.get("/api/room/:roomId/annotations", async (ctx) => {
   try {
     const roomId = parseInt(ctx.params.roomId);
     const userId = ctx.session?.userId;
 
-    // Verify access
     const room = await prisma.room.findFirst({
       where: {
         id: roomId,
@@ -560,7 +558,6 @@ router.get("/api/room/:roomId/annotations", async (ctx) => {
       return;
     }
 
-    // Get annotations with author info
     const annotations = await prisma.annotation.findMany({
       where: {
         roomId,

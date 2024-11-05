@@ -22,8 +22,6 @@ export function Room() {
         privateApiRequest<Annotation[]>(`/room/${roomId}/annotations`),
       ]);
 
-      console.log("Room data received:", roomResponse);
-
       if (roomResponse.error) {
         alert(roomResponse.error);
         return;
@@ -40,6 +38,8 @@ export function Room() {
     return <Loading />;
   }
 
+  console.log(room);
+
   return (
     <RoomViewWithLiveblocks
       id={room.id}
@@ -49,6 +49,7 @@ export function Room() {
       currentUserId={user?.id}
       initialAnnotations={annotations}
       liveblocksRoomId={room.liveblocksRoomId}
+      ownerUserId={room.ownerUserId}
     />
   );
 }

@@ -17,9 +17,9 @@ export function RoomsList({ rooms }: RoomsListProps) {
   return (
     <div className="space-y-8 h-full overflow-y-auto">
       <section>
-        <h2 className="text-xl font-semibold mb-4">Owned Rooms</h2>
+        <h2 className="text-xl font-semibold mb-4">Owned Maps</h2>
         {ownedRooms.length === 0 ? (
-          <p className="text-gray-500">No owned rooms</p>
+          <p className="text-gray-500">No owned maps</p>
         ) : (
           <ul className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {ownedRooms.map((room) => (
@@ -44,9 +44,9 @@ export function RoomsList({ rooms }: RoomsListProps) {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mb-4">Participant Rooms</h2>
+        <h2 className="text-xl font-semibold mb-4">Participant Maps</h2>
         {participantRooms.length === 0 ? (
-          <p className="text-gray-500">No participant rooms</p>
+          <p className="text-gray-500">No participant maps</p>
         ) : (
           <ul className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {participantRooms.map((room) => (

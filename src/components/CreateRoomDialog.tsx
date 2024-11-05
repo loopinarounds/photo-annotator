@@ -34,7 +34,7 @@ export function CreateRoomDialog({ isOpen, onClose }: CreateRoomDialogProps) {
       return;
     }
 
-    alert("Room created successfully");
+    alert("Map created successfully");
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,10 +56,10 @@ export function CreateRoomDialog({ isOpen, onClose }: CreateRoomDialogProps) {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-96">
-        <h2 className="text-xl font-semibold mb-4 text-black">Create Room</h2>
+        <h2 className="text-xl font-semibold mb-4 text-black">Create Map</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block mb-2 text-black">Room Name</label>
+            <label className="block mb-2 text-black">Map Name</label>
             <input
               type="text"
               id="roomName"

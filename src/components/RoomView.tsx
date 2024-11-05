@@ -29,6 +29,7 @@ interface RoomViewProps {
   currentUserId?: number;
   initialAnnotations?: Annotation[];
   liveblocksRoomId: string;
+  ownerUserId: number;
 }
 
 export function RoomViewWithLiveblocks(props: RoomViewProps) {
@@ -54,6 +55,7 @@ function RoomView({
   participants = [],
   id,
   currentUserId,
+  ownerUserId,
 }: RoomViewProps) {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [editingText, setEditingText] = useState("");
@@ -203,6 +205,7 @@ function RoomView({
           <button
             onClick={() => setIsInviteOpen(true)}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            disabled={currentUserId !== ownerUserId}
           >
             Add Participant
           </button>
