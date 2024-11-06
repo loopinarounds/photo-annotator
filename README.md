@@ -1,6 +1,6 @@
 # photo-annotator
 
-```npm i```
+```npm i```/n
 ```npm run build```
 ```npm run dev```
 
