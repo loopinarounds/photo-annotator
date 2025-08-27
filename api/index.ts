@@ -1,5 +1,4 @@
 import Koa from "koa";
-import routerOne from "./routes/test";
 import bodyParser from "koa-bodyparser";
 
 import cors from "@koa/cors";
@@ -34,10 +33,10 @@ app.use(async (ctx, next) => {
   })(ctx, next);
 });
 
-router.get('/', async (ctx)  => {
+router.get('/api/test', async (ctx)  => {
   ctx.status = 200;
   ctx.body = {
-   message: 'Hello'
+   message: 'Hello dweeb'
   };
 })
 

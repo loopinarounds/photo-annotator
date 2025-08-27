@@ -12,8 +12,7 @@ useEffect(() => {
   const getTestMessage = async () => {
 
 
-    const testMessage = await request<Test>(
-      "/")
+    const testMessage = await request<Test>("/test")
    
 
   
@@ -35,7 +34,7 @@ if (!testMessage) {
 
   return (
     <div className="bg-center">
-      Hello
+      {testMessage}
     </div>
   );
 }
