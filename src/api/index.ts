@@ -1,30 +1,6 @@
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "http://localhost:3000"
 
-export async function publicApiRequest<T>(
-  endpoint: string,
-  {
-    method = "GET",
-    body = null,
-  }: {
-    method?: string;
-    body?: Record<string, unknown> | null;
-  } = {}
-): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  const response = await fetch(`${API_BASE_URL}/public${endpoint}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : null,
-    credentials: "include",
-  });
-
-  return await response.json();
-}
-
-export async function privateApiRequest<T>(
+export async function request<T>(
   endpoint: string,
   {
     method = "GET",

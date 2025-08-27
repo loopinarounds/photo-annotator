@@ -1,46 +1,41 @@
-import { useState, useEffect } from "react";
-import type { Room, RoomsResponse } from "../types";
-import { privateApiRequest } from "../api";
+import { useEffect, useState } from "react";
+import { request } from "../api";
+import type { Test } from "../types";
 import Loading from "../components/Loading";
-import { useUser } from "../hooks/useUser";
-import { RoomsList } from "../components/RoomsList";
+
 
 export function Home() {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
-  const user = useUser();
+  
+const [testMessage,setTestMessage] = useState<string | null>(null)
 
-  useEffect(() => {
-    const getRooms = async () => {
-      setLoading(true);
+useEffect(() => {
+  const getTestMessage = async () => {
 
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
 
-      const response = await privateApiRequest<RoomsResponse>(`/rooms`);
+    const testMessage = await request<Test>(
+      "/")
+   
 
-      if (response.error) {
-        alert(response.error);
-        setLoading(false);
-        return;
-      }
+  
+    if (!testMessage.message) {
+      alert("error");
+      return;
+    }
 
-      setRooms(Array.isArray(response.rooms) ? response.rooms : []);
-      setLoading(false);
-    };
+    setTestMessage(testMessage.message);
+ 
+  };
 
-    getRooms();
-  }, [user]);
+  getTestMessage();
+}, []);
 
-  if (loading) {
-    return <Loading />;
-  }
+if (!testMessage) {
+  return <Loading />;
+}
 
   return (
-    <div>
-      {rooms.length === 0 ? <p>No rooms found</p> : <RoomsList rooms={rooms} />}
+    <div className="bg-center">
+      Hello
     </div>
   );
 }
