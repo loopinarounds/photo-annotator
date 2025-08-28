@@ -1,4 +1,4 @@
-# photo-annotator
+# dashboard
 
 ```npm i```
 ```npm run build```

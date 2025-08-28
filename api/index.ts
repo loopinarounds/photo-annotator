@@ -36,7 +36,7 @@ app.use(async (ctx, next) => {
 router.get('/api/test', async (ctx)  => {
   ctx.status = 200;
   ctx.body = {
-   message: 'Hello dweeb'
+   message: 'Hello'
   };
 })
 
